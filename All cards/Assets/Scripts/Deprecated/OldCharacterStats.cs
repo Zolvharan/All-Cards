@@ -1,32 +1,46 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 using System;
 
 // Character prefab data
-public class CharacterStats : MonoBehaviour
+public class OldCharacterStats : MonoBehaviour
 {
     // Stat targets are const to keep accessing deterministic
-    public static string[] statTargets = { "health", "energy", "moveSpeed", "attackRange", "strength", "energyRegen", "precision", "dexterity", "defense", "resistance"};
+    public static string[] statTargets = { "health", "energy", "moveSpeed", "attackRange", "strength", "defense", "dexterity", "precision", "resistance", "energyRegen" };
 
     public PlayerControl playerControl;
 
     public Ability[] abilities;
     public List<Item> items;
 
-    public string characterName;
+    // TODO: Following public variables should be private
+    // and initialized with character creation and saved somewhere
     public Sprite portrait;
+    // public Sprite fieldSprite
+    public string characterName;
+    // TODO: Following variables should not exist and are placeholders for initialization
+    public int maxHealth; // Probably flat or close to, determines starting health
+    public int maxEnergy; // Probably flat or close to, determines starting energy
+    public int moveSpeed; // Affects the move speed of character
+    public int attackRange; // Affects the attack range of all attacks
+    public int energyRegen; // Determines the amount of energy regenerated every turn
+    public int strength; // Affects the damage dealt to health by all health damaging abilites
+    public int resistance; // counters and affects non-health targeting attacks
+    public int precision; // counters dexterity and affects critical
+    public int dexterity; // general counter, percent chance to dodge
+    public int defense; // counters strength, flat damage barrier against all health damaging attacks
     public bool flying; // Allows character to travel with static tile move cost
 
     // Used to calculate accuracy
     public const float DEX_MULTIPLIER = 0.8f;
 
-    protected Dictionary<string, int> baseStats;
+    Dictionary<string, int> baseStats;
     protected Dictionary<string, int> currStats;
 
     // For buffs/debuffs
-    protected Dictionary<string, int> statEffectsPotencies;
-    protected Dictionary<string, int> statEffectsDurations;
+    Dictionary<string, int> statEffectsPotencies;
+    Dictionary<string, int> statEffectsDurations;
 
     public bool moved = false;
     public bool attacked = false;
@@ -36,24 +50,34 @@ public class CharacterStats : MonoBehaviour
     public Tile currTile;
 
     // Initializes variables
-    public void ConstructCharacter(string newName, Ability[] newAbilities, Sprite newPortrait, Sprite newBattleSprite, bool isFlying, Dictionary<String, int> newBaseStats, List<Item> newItems)
+    void Awake()
     {
-        // TODO: probably temp
-        player = true;
-
-        characterName = newName;
-        abilities = newAbilities;
-        items = newItems;
-        portrait = newPortrait;
-        this.GetComponent<SpriteRenderer>().sprite = newBattleSprite;
-        flying = isFlying;
-
-        baseStats = new Dictionary<string, int>(newBaseStats);
-        currStats = new Dictionary<string, int>(baseStats);
-        // Energy always starts empty
-        currStats["energy"] = 0;
-
+        baseStats = new Dictionary<string, int>();
+        currStats = new Dictionary<string, int>();
         statEffectsPotencies = new Dictionary<string, int>();
+        statEffectsDurations = new Dictionary<string, int>();
+
+        baseStats["health"] = maxHealth;
+        baseStats["energy"] = maxEnergy;
+        baseStats["moveSpeed"] = moveSpeed;
+        baseStats["attackRange"] = attackRange;
+        baseStats["strength"] = strength;
+        baseStats["precision"] = precision;
+        baseStats["defense"] = defense;
+        baseStats["dexterity"] = dexterity;
+        baseStats["resistance"] = resistance;
+        baseStats["energyRegen"] = energyRegen;
+
+        currStats["health"] = maxHealth;
+        currStats["energy"] = maxEnergy;
+        currStats["moveSpeed"] = moveSpeed;
+        currStats["attackRange"] = attackRange;
+        currStats["strength"] = strength;
+        currStats["precision"] = precision;
+        currStats["defense"] = defense;
+        currStats["dexterity"] = dexterity;
+        currStats["resistance"] = resistance;
+        currStats["energyRegen"] = energyRegen;
 
         statEffectsPotencies["health"] = 0;
         statEffectsPotencies["energy"] = 0;
@@ -66,11 +90,16 @@ public class CharacterStats : MonoBehaviour
         statEffectsPotencies["resistance"] = 0;
         statEffectsPotencies["energyRegen"] = 0;
 
-        statEffectsDurations = new Dictionary<string, int>(statEffectsPotencies);
-    }
-    public void AddItems(List<Item> newItems)
-    {
-        items.AddRange(newItems);
+        statEffectsDurations["health"] = 0;
+        statEffectsDurations["energy"] = 0;
+        statEffectsDurations["moveSpeed"] = 0;
+        statEffectsDurations["attackRange"] = 0;
+        statEffectsDurations["strength"] = 0;
+        statEffectsDurations["precision"] = 0;
+        statEffectsDurations["defense"] = 0;
+        statEffectsDurations["dexterity"] = 0;
+        statEffectsDurations["resistance"] = 0;
+        statEffectsDurations["energyRegen"] = 0;
     }
 
     public void NewTurn()
@@ -115,10 +144,10 @@ public class CharacterStats : MonoBehaviour
         double hit = (100 * Math.Pow(DEX_MULTIPLIER, unit.GetStats()[7]) + (currStats["precision"] * 10)) / 100 + random.NextDouble();
         // Crit
         if (hit >= 2)
-            unit.TakeDamage((int)Math.Floor(currStats["strength"] * 1.5f));
+            unit.TakeDamage((int)Math.Floor(strength * 1.5f));
         // Hit
         if (hit >= 1)
-            unit.TakeDamage(currStats["strength"]);
+            unit.TakeDamage(strength);
         else
         {
             UnityEngine.Debug.Log("Miss");
@@ -140,13 +169,13 @@ public class CharacterStats : MonoBehaviour
     {
         if (!isItems)
         {
-            abilities[abilityIndex].UseAbility(tiles, player, this);
+            //abilities[abilityIndex].UseAbility(tiles, player, this);
         }
         else
         {
             // Use item and remove it if it is expended
-            if (items[abilityIndex].UseItem(tiles, player, this))
-                items.RemoveAt(abilityIndex);
+            //if (items[abilityIndex].UseItem(tiles, player, this))
+            //    items.RemoveAt(abilityIndex);
         }
         attacked = true;
     }
@@ -184,7 +213,7 @@ public class CharacterStats : MonoBehaviour
         {
             // If stat is not health or energy, reset stat before setting it
             if (statName != "health" && statName != "energy")
-                currStats[statName] = baseStats[statName];
+               currStats[statName] = baseStats[statName];
 
             // overwrites existing effects
             statEffectsDurations[statName] = duration;
@@ -290,46 +319,32 @@ public class CharacterStats : MonoBehaviour
     {
         return currStats["attackRange"];
     }
-    public bool GetFlying()
-    {
-        return flying;
-    }
 
     // Used for forecasting
     public int[] GetStats()
     {
-        int[] stats = new int[statTargets.Length + 1];
-        for (int i = 0; i < stats.Length - 1; i++)
-        {
-            stats[i] = currStats[statTargets[i]];
-        }
-        // Pass in precision at the end as well
-        stats[stats.Length - 1] = currStats["precision"];
+        int[] stats = {currStats["health"], currStats["energy"], currStats["moveSpeed"], currStats["attackRange"], currStats["strength"],
+            currStats["precision"], currStats["defense"], currStats["dexterity"], currStats["resistance"], currStats["energyRegen"], currStats["precision"] };
         return stats;
     }
     public int[] GetBaseStats()
     {
-        int[] stats = new int[statTargets.Length];
-        for (int i = 0; i < stats.Length; i++)
-        {
-            stats[i] = baseStats[statTargets[i]];
-        }
+        int[] stats = {baseStats["health"], baseStats["energy"], baseStats["moveSpeed"], baseStats["attackRange"], baseStats["strength"],
+            baseStats["precision"], baseStats["defense"], baseStats["dexterity"], baseStats["resistance"], baseStats["energyRegen"] };
         return stats;
     }
     public int[] GetDurations()
     {
-        int[] durations = new int[statTargets.Length];
-        for (int i = 0; i < durations.Length; i++)
-        {
-            durations[i] = statEffectsDurations[statTargets[i]];
-        }
+        int[] durations = {statEffectsDurations["health"], statEffectsDurations["energy"], statEffectsDurations["moveSpeed"],
+            statEffectsDurations["attackRange"], statEffectsDurations["strength"], statEffectsDurations["precision"], statEffectsDurations["defense"],
+            statEffectsDurations["dexterity"], statEffectsDurations["resistance"], statEffectsDurations["energyRegen"] };
         return durations;
     }
     public int[] GetOffsets(Ability usedAbility)
     {
         // Stat effects are mitigated by defense and resistance when potency is negative
         Dictionary<string, int> potencies = usedAbility.GetPotencies();
-        int[] offsets = new int[statTargets.Length + 1];
+        int[] offsets = new int[potencies.Count];
 
         // Ignore offsets if spell will not hit unit
         if (usedAbility.directed && player != usedAbility.ally)
@@ -356,7 +371,7 @@ public class CharacterStats : MonoBehaviour
                 offsets[0] = 0;
 
             // The rest are resistance
-            for (int i = 1; i < statTargets.Length; i++)
+            for (int i = 1; i < offsets.Length; i++)
             {
                 if (potencies[statTargets[i]] < 0)
                 {

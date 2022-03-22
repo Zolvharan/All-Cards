@@ -14,6 +14,33 @@ public class Enemy : CharacterStats
 
     public void SetController(EnemyControl newControl)
     {
+        // TODO: TEMP CODE
+        baseStats = new Dictionary<string, int>();
+        baseStats["health"] = 20;
+        baseStats["energy"] = 1;
+        baseStats["moveSpeed"] = 4;
+        baseStats["attackRange"] = 1;
+        baseStats["strength"] = 5;
+        baseStats["precision"] = 0;
+        baseStats["defense"] = 0;
+        baseStats["dexterity"] = 0;
+        baseStats["resistance"] = 0;
+        baseStats["energyRegen"] = 0;
+        currStats = new Dictionary<string, int>(baseStats);
+        statEffectsPotencies = new Dictionary<string, int>();
+        statEffectsPotencies["health"] = 0;
+        statEffectsPotencies["energy"] = 0;
+        statEffectsPotencies["moveSpeed"] = 0;
+        statEffectsPotencies["attackRange"] = 0;
+        statEffectsPotencies["strength"] = 0;
+        statEffectsPotencies["precision"] = 0;
+        statEffectsPotencies["defense"] = 0;
+        statEffectsPotencies["dexterity"] = 0;
+        statEffectsPotencies["resistance"] = 0;
+        statEffectsPotencies["energyRegen"] = 0;
+        statEffectsDurations = new Dictionary<string, int>(statEffectsPotencies);
+        flying = false;
+
         enemyControl = newControl;
     }
     override protected void Die()
@@ -30,7 +57,7 @@ public class Enemy : CharacterStats
         NewTurn();
         if (dead)
             return;
-        tilesInRange = currTile.FindTilesInRange(currTile, currStats["moveSpeed"]);
+        tilesInRange = currTile.GetTiles(currTile, currStats["moveSpeed"], false);
         closestPlayer = null;
         foreach (CharacterStats unit in currTile.map.characters)
         {

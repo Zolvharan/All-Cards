@@ -10,8 +10,9 @@ public class TESTCODE : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        generator.GenerateLevel(15, 10);
-        player.StartTurn();
+        //generator.GenerateLevel(15, 10);
+        //player.StartTurn();
+        SaveData.LoadData();
     }
 
     // Update is called once per frame

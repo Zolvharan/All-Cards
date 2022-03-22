@@ -1,142 +1,101 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
-// Manages the main menu
+// Generally manages the main menu
 public class MMManager : MonoBehaviour
 {
+    public GameObject BattleUI;
+
     public GameObject frontPage;
-    public GameObject customBattle;
-    public GameObject characters;
-    public GameObject charForm;
+    public BattleSetupUI customBattle;
+    public CCManager characters;
+    public MCManager charForm;
+    public SCManager characterSaves;
     public GameObject abilityForm;
+    public SAManager abilitySaves;
+    public CIManager imageSelection;
+    public MIManager itemForm;
 
-    const int MAX_CAPACITY = 25;
-    int currCapacity;
-    public Text capacityText;
-    public Toggle flyingToggle;
-    const int FLYING_COST = 5;
-    public Text[] statTextNums;
-    int[] statNums;
-    // The highest and lowest numbers that stats can be
-    // order is: MoveSpeed, AttackRange, Strength, EnergyRegen, Precision, Dexterity, Defense, Resistance
-    readonly int[] MIN_STAT_NUMS = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    readonly int[] MAX_STAT_NUMS = { 10, 10, 10, 5, 10, 5, 5, 5 };
-    readonly int[] DEFAULT_STAT_NUMS = { 1, 1, 1, 1, 0, 0, 0, 0 };
-
-    // Front page methods
     public void OpenFrontPage()
     {
         frontPage.SetActive(true);
-        customBattle.SetActive(false);
-        characters.SetActive(false);
+        customBattle.gameObject.SetActive(false);
+        characters.gameObject.SetActive(false);
     }
+
     public void OpenCustomBattle()
     {
-        customBattle.SetActive(true);
+        customBattle.gameObject.SetActive(true);
+        customBattle.InitDisplay();
         frontPage.SetActive(false);
     }
+    // Resets menu, opens battleUI and hides
+    public void StartCombat()
+    {
+        customBattle.gameObject.SetActive(false);
+        frontPage.SetActive(true);
+        BattleUI.SetActive(true);
+        this.gameObject.SetActive(false);
+    }
+
     public void OpenCharacters()
     {
-        characters.SetActive(true);
+        characters.gameObject.SetActive(true);
+        characters.InitDisplay();
         frontPage.SetActive(false);
-        charForm.SetActive(false);
+        charForm.gameObject.SetActive(false);
+        abilityForm.SetActive(false);
+        abilitySaves.gameObject.SetActive(false);
+        itemForm.gameObject.SetActive(false);
     }
+
+    // Primary initialization is done in MCManager
+    public void DisplayCharForm()
+    {
+        charForm.gameObject.SetActive(true);
+        charForm.RefreshAbilities();
+        characters.gameObject.SetActive(false);
+        abilityForm.SetActive(false);
+        imageSelection.gameObject.SetActive(false);
+    }
+    public void DisplaySavedCharacterData(CharacterData data, int isEditingSaveIndex = -1)
+    {
+        charForm.gameObject.SetActive(false);
+        characterSaves.gameObject.SetActive(true);
+        characterSaves.InitDisplay(data, isEditingSaveIndex);
+    }
+
+    // Primary initialization is done in MAManager
+    public void DisplayAbilityForm()
+    {
+        abilityForm.SetActive(true);
+        charForm.gameObject.SetActive(false);
+        abilitySaves.gameObject.SetActive(false);
+    }
+    public void DisplaySavedAbilityData(AbilityData data, bool isInChar, int isEditingSaveIndex = -1)
+    {
+        abilityForm.SetActive(false);
+        characters.gameObject.SetActive(false);
+        abilitySaves.gameObject.SetActive(true);
+        abilitySaves.InitDisplay(data, isInChar, isEditingSaveIndex);
+    }
+
+    public void OpenCharImages(bool isPortrait)
+    {
+        charForm.gameObject.SetActive(false);
+        imageSelection.gameObject.SetActive(true);
+        imageSelection.InitDisplay(isPortrait);
+    }
+
+    public void OpenItemForm()
+    {
+        itemForm.gameObject.SetActive(true);
+        characters.gameObject.SetActive(false);
+    }
+
     public void Exit()
     {
         Application.Quit();
     }
-
-    // Char form methods
-    public void OpenCreationForm(bool isEditing)
-    {
-        // TODO: Save bool variable
-        if (isEditing)
-        {
-            // TODO
-            return;
-        }
-        else
-        {
-            statNums = new int[8];
-            DEFAULT_STAT_NUMS.CopyTo(statNums, 0);
-            flyingToggle.isOn = false;
-        }
-        // Initialize stat nums and curr capacity
-        currCapacity = 0;
-        for (int i = 0; i < statNums.Length; i++)
-        {
-            statTextNums[i].text = statNums[i].ToString();
-            currCapacity += statNums[i];
-        }
-        if (flyingToggle.isOn)
-            currCapacity += 4;
-        capacityText.text = currCapacity.ToString() + '/' + MAX_CAPACITY;
-
-        charForm.SetActive(true);
-        characters.SetActive(false);
-    }
-    // Used by -+ buttons
-    public void IncrementStat(int statIndex)
-    {
-        if (statNums[statIndex] < MAX_STAT_NUMS[statIndex])
-        {
-            statNums[statIndex]++;
-            statTextNums[statIndex].text = statNums[statIndex].ToString();
-            capacityText.text = (++currCapacity).ToString() + '/' + MAX_CAPACITY;
-        }
-    }
-    public void DecrementStat(int statIndex)
-    {
-        if (statNums[statIndex] > MIN_STAT_NUMS[statIndex])
-        {
-            statNums[statIndex]--;
-            statTextNums[statIndex].text = statNums[statIndex].ToString();
-            capacityText.text = (--currCapacity).ToString() + '/' + MAX_CAPACITY;
-        }
-    }
-    // Used by flying toggle
-    public void ToggleFlying(Toggle flying)
-    {
-        capacityText.text = (currCapacity += flying.isOn ? FLYING_COST : -FLYING_COST).ToString() + '/' + MAX_CAPACITY;
-    }
-
-    // Ability form methods
-    public void OpenAbilityForm(bool isEditing)
-    {
-        // TODO: Save bool variable
-        if (isEditing)
-        {
-            // TODO
-            return;
-        }
-        else
-        {
-
-        }
-        abilityForm.SetActive(true);
-        charForm.SetActive(false);
-    }
-    public void ReOpenCreationForm(bool saveChanges)
-    {
-        if (saveChanges)
-        {
-            // TODO: save changes
-        }
-        charForm.SetActive(true);
-        abilityForm.SetActive(false);
-    }
-    // TODO: Saves ability to file
-    public void SaveAbility()
-    {
-        ReOpenCreationForm(true);
-    }
-
-    // Custom battle methods
-    public void StartBattle()
-    {
-
-    }
-
 }

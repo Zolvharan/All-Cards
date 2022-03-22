@@ -14,6 +14,8 @@ public class Tile : MonoBehaviour
     public int xPos;
     public int yPos;
     public int moveWeight;
+    // Cannot be traversed even if flying
+    //public bool impassable;
 
     public bool selected;
     public bool occupied = false;
@@ -98,7 +100,10 @@ public class Tile : MonoBehaviour
         if (range == -1)
         {
             if (targetingMode == 1)
+            {
                 range = currUnit.GetMoveSpeed();
+                walking = !currUnit.GetFlying();
+            }
             else if (targetingMode == 2)
                 range = currUnit.GetAttackRange();
         }
@@ -120,6 +125,11 @@ public class Tile : MonoBehaviour
             image.sprite = tileImages[0];
     }
 
+    // Used to find places for character to move
+    public HashSet<Tile> GetTiles(Tile sourceTile, int range, bool flying)
+    {
+        return flying ? CollectTiles(range) : FindTilesInRange(sourceTile, range);
+    }
     public HashSet<Tile> CollectTiles(int range)
     {
         HashSet<Tile> tiles = new HashSet<Tile>();
@@ -134,11 +144,11 @@ public class Tile : MonoBehaviour
             }
         }
 
+        tiles.Add(this);
         return tiles;
     }
-
     Dictionary<Tile, int> currDistances;
-    public HashSet<Tile> FindTilesInRange(Tile sourceTile, int range)
+    HashSet<Tile> FindTilesInRange(Tile sourceTile, int range)
     {
         Tile currTile;
         Tile peekTile;
@@ -154,6 +164,7 @@ public class Tile : MonoBehaviour
             currTile = tilesToTrack.Dequeue();
             currRange = tilesToTrackDistances.Dequeue();
 
+            // Test routes in all four directions, if not at map border
             if (currTile.xPos + 1 < map.length)
             {
                 peekTile = map.tiles[currTile.xPos + 1][currTile.yPos];
@@ -177,20 +188,26 @@ public class Tile : MonoBehaviour
         }
 
         HashSet<Tile> tilesToHighlight = new HashSet<Tile>();
+        // Log all tiles reached
         foreach (KeyValuePair<Tile, int> pair in currDistances)
         {
             tilesToHighlight.Add(pair.Key);
         }
+
+        tilesToHighlight.Add(this);
         return tilesToHighlight;
     }
     public void TrackTile(Tile peekTile, Queue<Tile> tilesToTrack, Queue<int> distances, int currRange)
     {
-        if (!currDistances.ContainsKey(peekTile) && currRange - peekTile.moveWeight >= 0)
+        // Check if tile is reachable and not logged
+        // TODO: decide whether excess range can reach one additional tile, or if range is needed for every tile
+        if (!currDistances.ContainsKey(peekTile) && currRange > 0)// - peekTile.moveWeight >= 0)
         {
             tilesToTrack.Enqueue(peekTile);
             distances.Enqueue(currRange - peekTile.moveWeight);
             currDistances.Add(peekTile, currRange - peekTile.moveWeight);
         }
+        // Check if tile is logged, but the current route is more efficient
         else if (currDistances.ContainsKey(peekTile) && currDistances[peekTile] < currRange - peekTile.moveWeight)
         {
             tilesToTrack.Enqueue(peekTile);

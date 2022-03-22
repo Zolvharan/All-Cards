@@ -37,7 +37,7 @@ public class AbilityUI : MonoBehaviour
             for (int i = 0; i < unit.abilities.Length; i++)
             {
                 // change button name to ability name and gives button references
-                buttons[i].GetComponent<AbilityButton>().SetButton(unit.abilities[i].abilityName, unit.abilities[i].energyCost.ToString() + " energy", unit, currTile, i, false);
+                buttons[i].GetComponent<AbilityButton>().SetButton(unit.abilities[i].abilityName, unit.abilities[i].costPotencies["energy"].ToString() + " energy", unit, currTile, i, false);
                 buttons[i].SetActive(true);
             }
         }

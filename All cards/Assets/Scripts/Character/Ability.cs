@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-public class Ability : MonoBehaviour
+public class Ability
 {
     public string abilityName;
     // Player created ability data
@@ -23,21 +23,55 @@ public class Ability : MonoBehaviour
     // determines ability accuracy
     public int precision;
 
-    public int energyCost;
-
     // Each element of a given index in each array all correspond to each other
-    // Determines what the ability affects (can include position)
-    public int[] potencies;
-    // Determines effect durations (0 for instant, positive for buffs/debuffs and HOT/DOTs)
-    public int[] durations;
-    // Stat targets are const to keep accessing deterministic
-    static string[] statTargets = { "health", "energy", "moveSpeed", "attackRange", "strength", "defense", "dexterity", "precision", "resistance", "energyRegen" };
 
-    public void UseAbility(HashSet<Tile> tiles, bool player)
+    // Determines what the ability affects
+    // TODO (can include position)
+    public Dictionary<string, int> potencies;
+    // Determines effect durations (0 for instant, positive for buffs/debuffs and HOT/DOTs)
+    public Dictionary<string, int> durations;
+    // Cost effects
+    public Dictionary<string, int> costPotencies;
+    public Dictionary<string, int> costDurations;
+
+    public Ability(string newName, bool isDirected, bool isBiased, bool isAlly, int[] newPotencies, int[] newDurations, int[] newCostPotencies, int[] newCostDurations, int[] newGlobals)
+    {
+        abilityName = newName;
+        directed = isDirected;
+        biased = isBiased;
+        ally = isAlly;
+        potencies = new Dictionary<string, int>();
+        InitStatDict(potencies, newPotencies);
+        durations = new Dictionary<string, int>();
+        InitStatDict(durations, newDurations);
+        costPotencies = new Dictionary<string, int>();
+        InitStatDict(costPotencies, newCostPotencies);
+        costDurations = new Dictionary<string, int>();
+        InitStatDict(costDurations, newCostDurations);
+        radius = newGlobals[2];
+        range = newGlobals[0];
+        precision = newGlobals[1];
+    }
+    // copySource order could change in the future
+    void InitStatDict(Dictionary<string, int> copyTarget, int[] copySource)
+    {
+        copyTarget["moveSpeed"] = copySource[0];
+        copyTarget["attackRange"] = copySource[1];
+        copyTarget["strength"] = copySource[2];
+        copyTarget["energyRegen"] = copySource[3];
+        copyTarget["precision"] = copySource[4];
+        copyTarget["dexterity"] = copySource[5];
+        copyTarget["defense"] = copySource[6];
+        copyTarget["resistance"] = copySource[7];
+        copyTarget["health"] = copySource[8];
+        copyTarget["energy"] = copySource[9];
+    }
+
+    // player determines relative friend and foe, caster is used to apply cost
+    public void UseAbility(HashSet<Tile> tiles, bool player, CharacterStats caster)
     {
         // Used for biased abilities
         int reverseEffect = 1;
-        int i;
         System.Random random = new System.Random();
         double hit;
         foreach (Tile tile in tiles)
@@ -47,23 +81,23 @@ public class Ability : MonoBehaviour
                 if (!directed && biased && tile.currUnit.player != player)
                     reverseEffect = -1;
                 // ignore unit if ability is directed and it is not a target
-                if (directed && ((tile.currUnit.player == player) != ally))
+                else if (directed && ((tile.currUnit.player == player) != ally))
                     continue;
                 // affect stat of each unit in possible AOE across duration
-                for (i = 0; i < statTargets.Length; i++)
+                foreach (string target in CharacterStats.statTargets)
                 {
                     // Break if unit dies
                     if (tile.currUnit == null)
                         break;
                     // Ignore uneffected stats
-                    if (potencies[i] == 0)
+                    if (potencies[target] == 0)
                         continue;
                     // determine hit, factor dexterity into equation if effect is negative
-                    hit = potencies[i] > 0 ? 1 + (precision / 10) + random.NextDouble() : (100 * Math.Pow(CharacterStats.DEX_MULTIPLIER, tile.currUnit.GetStats()[7]) + (precision * 10)) / 100 + random.NextDouble();
+                    hit = potencies[target] > 0 ? 1 + (precision / 10) + random.NextDouble() : (100 * Math.Pow(CharacterStats.DEX_MULTIPLIER, tile.currUnit.GetStats()[7]) + (precision * 10)) / 100 + random.NextDouble();
                     if (hit >= 1)
                     {
                         // Ignore uneffected stats (checks for tile variable in case character died)
-                        tile.currUnit.AddStatEffect(statTargets[i], durations[i], (int)Math.Floor(potencies[i] * reverseEffect * (hit >= 2 ? 1.5f : 1)));    // Ternary tests crit
+                        tile.currUnit.AddStatEffect(target, durations[target], (int)Math.Floor(potencies[target] * reverseEffect * (hit >= 2 ? 1.5f : 1)));    // Ternary tests crit
                     }
                     else
                     {
@@ -74,13 +108,21 @@ public class Ability : MonoBehaviour
             }
             reverseEffect = 1;
         }
+        // Apply cost, cost ignores evasion and mitigation
+        foreach (string target in CharacterStats.statTargets)
+        {
+            // Ignore uneffected stats
+            if (costPotencies[target] == 0)
+                continue;
+            caster.AddStatEffect(target, costDurations[target], -costPotencies[target], true);
+        }
     }
 
-    public int[] GetPotencies()
+    public Dictionary<string, int> GetPotencies()
     {
         return potencies;
     }
-    public int[] GetDurations()
+    public Dictionary<string, int> GetDurations()
     {
         return durations;
     }

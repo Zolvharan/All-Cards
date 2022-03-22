@@ -33,7 +33,7 @@ public class PlayerControl : MonoBehaviour
     HashSet<Tile> targetedTiles;
     bool usingItems;
 
-    public CharacterStats[] units;
+    public List<CharacterStats> units;
     public BUIManager UI;
     public EnemyControl enemy;
     bool playerTurn;
@@ -67,7 +67,7 @@ public class PlayerControl : MonoBehaviour
                 if (moving && rayHit && rayHit.collider.GetComponent<Tile>() != null && !confirming)
                 {
                     // checks that tile is with move range
-                    HashSet<Tile> tiles = currTile.FindTilesInRange(currTile, currTile.currUnit.GetMoveSpeed());
+                    HashSet<Tile> tiles = currTile.GetTiles(currTile, currTile.currUnit.GetMoveSpeed(), currTile.currUnit.GetFlying());
                     if (tiles.Contains(rayHit.collider.GetComponent<Tile>()) && !rayHit.collider.GetComponent<Tile>().occupied)
                     {
                         // prompts user for confirmation before finishing move

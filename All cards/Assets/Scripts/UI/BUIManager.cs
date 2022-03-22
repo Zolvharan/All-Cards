@@ -150,14 +150,14 @@ public class BUIManager : MonoBehaviour
         chanceNums[0].text = (Math.Round(100 * Math.Pow(CharacterStats.DEX_MULTIPLIER, numsToSet[7])) + (numsToSet[10] * 10)).ToString();
         chanceNums[1].text = (100 + (numsToSet[10] * 10)).ToString();
     }
-    public void SetForeDurationNums(Text[] currTexts, int[] currDurations, int[] newDurations = null)
+    public void SetForeDurationNums(Text[] currTexts, int[] currDurations, Dictionary<string, int> newDurations = null)
     {
         // Sets forecast durations if new effects are given, current durations otherwise
         // Set text to appropriate num if it exists, "" otherwise
         for (int i = 0; i < currTexts.Length; i++)
         {
-            if (newDurations != null && newDurations[i] > 0)
-                currTexts[i].text = newDurations[i].ToString();
+            if (newDurations != null && newDurations[CharacterStats.statTargets[i]] > 0)
+                currTexts[i].text = newDurations[CharacterStats.statTargets[i]].ToString();
             else if (currDurations[i] > 0)
                 currTexts[i].text = currDurations[i].ToString();
             else

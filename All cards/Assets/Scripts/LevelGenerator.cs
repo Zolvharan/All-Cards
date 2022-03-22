@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class LevelGenerator : MonoBehaviour
 {
+    public PlayerControl playerControl;
+
     public Tile[][] tiles;
     public int length;
     public int height;
@@ -17,13 +19,15 @@ public class LevelGenerator : MonoBehaviour
     public Sprite abilityImage;
     public BUIManager UI;
 
-    public CharacterStats[] characters;
+    public List<CharacterStats> characters;
     public CharacterStats[] enemies;
 
     public TilePrefab[] tileSet;
 
-    public void GenerateLevel(int horizontalSize, int verticalSize)
+    public void GenerateLevel(int horizontalSize, int verticalSize, List<CharacterStats> newCharacters)
     {
+        characters = newCharacters;
+
         length = horizontalSize;
         height = verticalSize;
         tiles = new Tile[horizontalSize][];
@@ -44,8 +48,13 @@ public class LevelGenerator : MonoBehaviour
         }
 
         // temp code
-        tiles[0][0].PlaceUnit(characters[0]);
-        tiles[0][1].PlaceUnit(characters[1]);
+        for (i = 0; i < characters.Count; i++)
+        {
+            characters[i].playerControl = playerControl;
+            tiles[0][i].PlaceUnit(characters[i]);
+        }
+        playerControl.units = characters;
+
         tiles[horizontalSize - 1][verticalSize - 1].PlaceUnit(enemies[0]);
         tiles[horizontalSize - 2][verticalSize - 3].PlaceUnit(enemies[1]);
         tiles[horizontalSize - 4][verticalSize - 2].PlaceUnit(enemies[2]);
