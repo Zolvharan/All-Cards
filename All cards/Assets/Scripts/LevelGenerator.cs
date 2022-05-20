@@ -6,6 +6,7 @@ using UnityEngine;
 public class LevelGenerator : MonoBehaviour
 {
     public PlayerControl playerControl;
+    public EnemyControl enemyControl;
 
     public Tile[][] tiles;
     public int length;
@@ -20,13 +21,14 @@ public class LevelGenerator : MonoBehaviour
     public BUIManager UI;
 
     public List<CharacterStats> characters;
-    public CharacterStats[] enemies;
+    public List<Enemy> enemies;
 
     public TilePrefab[] tileSet;
 
-    public void GenerateLevel(int horizontalSize, int verticalSize, List<CharacterStats> newCharacters)
+    public void GenerateLevel(int horizontalSize, int verticalSize, List<CharacterStats> newCharacters, List<Enemy> newEnemies)
     {
         characters = newCharacters;
+        enemies = newEnemies;
 
         length = horizontalSize;
         height = verticalSize;
@@ -47,7 +49,7 @@ public class LevelGenerator : MonoBehaviour
             }
         }
 
-        // temp code
+        // TODO: temp code, player should have some control over starting positions
         for (i = 0; i < characters.Count; i++)
         {
             characters[i].playerControl = playerControl;
@@ -55,8 +57,11 @@ public class LevelGenerator : MonoBehaviour
         }
         playerControl.units = characters;
 
-        tiles[horizontalSize - 1][verticalSize - 1].PlaceUnit(enemies[0]);
-        tiles[horizontalSize - 2][verticalSize - 3].PlaceUnit(enemies[1]);
-        tiles[horizontalSize - 4][verticalSize - 2].PlaceUnit(enemies[2]);
+        // TODO: temp code, enemies should probably have more specific starting positions
+        for (i = 0; i < enemies.Count; i++)
+        {
+            tiles[tiles.Length - 1][tiles[i].Length - i - 1].PlaceUnit(enemies[i]);
+        }
+        enemyControl.SetEnemies(enemies);
     }
 }

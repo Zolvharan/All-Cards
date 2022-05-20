@@ -4,12 +4,13 @@ using UnityEngine;
 
 public class EnemyControl : MonoBehaviour
 {
-    public Enemy[] enemies;
+    public List<Enemy> enemies;
     public PlayerControl player;
     public BUIManager UI;
 
-    void Awake()
+    public void SetEnemies(List<Enemy> newEnemies)
     {
+        enemies = newEnemies;
         foreach (Enemy enemy in enemies)
         {
             enemy.SetController(this);

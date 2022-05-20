@@ -36,10 +36,9 @@ public class CharacterStats : MonoBehaviour
     public Tile currTile;
 
     // Initializes variables
-    public void ConstructCharacter(string newName, Ability[] newAbilities, Sprite newPortrait, Sprite newBattleSprite, bool isFlying, Dictionary<String, int> newBaseStats, List<Item> newItems)
+    public void ConstructCharacter(string newName, Ability[] newAbilities, Sprite newPortrait, Sprite newBattleSprite, bool isFlying, Dictionary<String, int> newBaseStats, List<Item> newItems, bool isPlayer)
     {
-        // TODO: probably temp
-        player = true;
+        player = isPlayer;
 
         characterName = newName;
         abilities = newAbilities;
@@ -117,7 +116,7 @@ public class CharacterStats : MonoBehaviour
         if (hit >= 2)
             unit.TakeDamage((int)Math.Floor(currStats["strength"] * 1.5f));
         // Hit
-        if (hit >= 1)
+        else if (hit >= 1)
             unit.TakeDamage(currStats["strength"]);
         else
         {
@@ -325,7 +324,16 @@ public class CharacterStats : MonoBehaviour
         }
         return durations;
     }
-    public int[] GetOffsets(Ability usedAbility)
+
+    public int[] GetOffsets(Ability usedAbility, bool isCost)
+    {
+        if (isCost)
+            return CollectCostOffsets(usedAbility);
+        else
+            return CollectOffsets(usedAbility);
+    }
+    // Used for ability effects
+    public int[] CollectOffsets(Ability usedAbility)
     {
         // Stat effects are mitigated by defense and resistance when potency is negative
         Dictionary<string, int> potencies = usedAbility.GetPotencies();
@@ -370,8 +378,38 @@ public class CharacterStats : MonoBehaviour
             }
         }
 
+        // Flip potencies if biased and target is enemy
+        if (usedAbility.IsBiased() && usedAbility.IsPlayer() != player)
+        {
+            for (int i = 0; i < statTargets.Length; i++)
+            {
+                offsets[i] *= -1;
+            }
+        }
+
         // Pass in the current precision for forecasting purposes
         offsets[10] = usedAbility.precision;
+
+        return offsets;
+    }
+    // Used for ability cost
+    public int[] CollectCostOffsets(Ability usedAbility)
+    {
+        // Stat effects are mitigated by defense and resistance when potency is negative
+        Dictionary<string, int> costPotencies = usedAbility.GetCostPotencies();
+        int[] offsets = new int[statTargets.Length + 1];
+
+        // Cost ignores defense
+        offsets[0] = costPotencies["health"] <= 0 ? offsets[0] = costPotencies["health"] : offsets[0] = GetHealing(costPotencies["health"]);
+
+        // Cost ignores resistance
+        for (int i = 1; i < statTargets.Length; i++)
+        {
+            offsets[i] = costPotencies[statTargets[i]];
+        }
+
+        // Cost ignores precision
+        offsets[10] = 0;
 
         return offsets;
     }

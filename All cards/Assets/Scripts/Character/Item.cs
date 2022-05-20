@@ -9,8 +9,8 @@ public class Item : Ability
 
     public int numUses;
 
-    public Item(string newName, bool isDirected, bool isBiased, bool isAlly, int[] newPotencies, int[] newDurations, int[] newCostPotencies, int[] newCostDurations, int[] newGlobals, int newNumUses)
-        : base(newName, isDirected, isBiased, isAlly, newPotencies, newDurations, newCostPotencies, newCostDurations, newGlobals)
+    public Item(string newName, bool isDirected, bool isBiased, bool isAlly, int[] newPotencies, int[] newDurations, int[] newCostPotencies, int[] newCostDurations, int[] newGlobals, int[] newPushInts, int newNumUses, bool isPlayer)
+        : base(newName, isDirected, isBiased, isAlly, newPotencies, newDurations, newCostPotencies, newCostDurations, newGlobals, newPushInts, isPlayer)
     {
         /*
         abilityName = newName;

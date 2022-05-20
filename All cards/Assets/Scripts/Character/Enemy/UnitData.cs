@@ -3,18 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class CharacterData
+public class UnitData
 {
-    public string characterName;
+    public string unitName;
     public AbilityData[] abilities;
     public byte[] portrait;
     public byte[] battleSprite;
     public bool flying;
     public int[] stats;
+    public byte[] banner;
+    public int enemyLevel;
+    // TODO: AIType?
 
-    public CharacterData(string newName, AbilityData[] newAbilities, byte[] newPortrait, byte[] newBattleSprite, int[] statNums, bool isFlying)
+    public UnitData(string newName, AbilityData[] newAbilities, byte[] newPortrait, byte[] newBattleSprite, int[] statNums, bool isFlying, int newEnemyLevel)
     {
-        characterName = newName;
+        unitName = newName;
         abilities = new AbilityData[newAbilities.Length];
         newAbilities.CopyTo(abilities, 0);
         portrait = new byte[newPortrait.Length];
@@ -24,10 +27,11 @@ public class CharacterData
         stats = new int[8];
         statNums.CopyTo(stats, 0);
         flying = isFlying;
+        enemyLevel = newEnemyLevel;
     }
 
-    // Takes basePrefab as input, and initializes character
-    public void ConstructCharacter(CharacterStats basePrefab, List<Item> newItems, bool isPlayer)
+    // Takes basePrefab as input, and initializes unit
+    public void ConstructUnit(Enemy basePrefab, bool isPlayer)
     {
         Dictionary<string, int> baseStats = new Dictionary<string, int>();
         baseStats["health"] = 20;
@@ -41,8 +45,9 @@ public class CharacterData
         baseStats["defense"] = stats[6];
         baseStats["resistance"] = stats[7];
 
-        Sprite newPortrait = ConstructImage(portrait);
-        Sprite newBattleSprite = ConstructImage(battleSprite);
+        Sprite newPortrait = CharacterData.ConstructImage(portrait);
+        Sprite newBattleSprite = CharacterData.ConstructImage(battleSprite);
+        Sprite newBanner = CharacterData.ConstructImage(banner);
         // TODO: init abilities
         Ability[] newAbilities = new Ability[abilities.Length];
         for (int i = 0; i < abilities.Length; i++)
@@ -50,9 +55,9 @@ public class CharacterData
             newAbilities[i] = abilities[i].ConstructAbility(isPlayer);
         }
 
-        basePrefab.ConstructCharacter(characterName, newAbilities, newPortrait, newBattleSprite, flying, baseStats, newItems, isPlayer);
+        basePrefab.ConstructUnit(unitName, newAbilities, newPortrait, newBattleSprite, flying, baseStats, newBanner, enemyLevel, isPlayer);
     }
-    // Construct sprite out of file data
+    /*// Construct sprite out of file data
     static public Sprite ConstructImage(byte[] data)
     {
         Sprite newSprite;
@@ -64,10 +69,19 @@ public class CharacterData
         }
         else
             return null;
-    }
+    }*/
 
+    public void SetBanner(byte[] newBanner)
+    {
+        banner = new byte[newBanner.Length];
+        newBanner.CopyTo(banner, 0);
+    }
     public string GetName()
     {
-        return characterName;
+        return unitName;
+    }
+    public int GetEnemyLevel()
+    {
+        return enemyLevel;
     }
 }

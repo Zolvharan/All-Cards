@@ -132,7 +132,7 @@ public class PlayerControl : MonoBehaviour
                     targetedTiles = rayHit.collider.GetComponent<Tile>().CollectTiles(abilityRadius);
                     confirming = true;
                     UI.ToggleCharDisplay(false, true, true);
-                    UI.DisplayForecast(targetedTile.currUnit, currTile.currUnit.GetAbility(abilityIndex, usingItems));
+                    UI.DisplayForecast(targetedTile.currUnit, currTile.currUnit.GetAbility(abilityIndex, usingItems), currTile.currUnit);
                 }
             }
         }

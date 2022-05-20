@@ -14,8 +14,9 @@ public class AbilityData
     public int[] costPotencies;
     public int[] costDurations;
     public int[] globalStats;
+    public int[] pushInts;
 
-    public AbilityData(string newName, bool isDirected, bool isBiased, bool isAlly, int[] newPotencies, int[] newDurations, int[] newCostPotencies, int[] newCostDurations, int[] newGlobalStats)
+    public AbilityData(string newName, bool isDirected, bool isBiased, bool isAlly, int[] newPotencies, int[] newDurations, int[] newCostPotencies, int[] newCostDurations, int[] newGlobalStats, int[] newPushInts)
     {
         abilityName = newName;
         directed = isDirected;
@@ -31,21 +32,27 @@ public class AbilityData
         newCostDurations.CopyTo(costDurations, 0);
         globalStats = new int[3];
         newGlobalStats.CopyTo(globalStats, 0);
+        pushInts = new int[4];
+        newPushInts.CopyTo(pushInts, 0);
 
-        // Replace durations with 0 if corresponding potency is 0
         for (int i = 0; i < potencies.Length; i++)
         {
+            // Replace durations with 0 if corresponding potency is 0
             if (potencies[i] == 0)
                 durations[i] = 0;
             if (costPotencies[i] == 0)
                 costDurations[i] = 0;
+
+            // If biased, make all potencies positive
+            if (potencies[i] < 0 && !directed && biased)
+                potencies[i] *= -1;
         }
     }
 
     // Constructs ability
-    public Ability ConstructAbility()
+    public Ability ConstructAbility(bool isPlayer)
     {
-        Ability newAbility = new Ability(abilityName, directed, biased, ally, potencies, durations, costPotencies, costDurations, globalStats);
+        Ability newAbility = new Ability(abilityName, directed, biased, ally, potencies, durations, costPotencies, costDurations, globalStats, pushInts, isPlayer);
         return newAbility;
     }
 
