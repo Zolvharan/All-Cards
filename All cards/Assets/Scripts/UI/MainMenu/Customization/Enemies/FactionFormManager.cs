@@ -83,7 +83,11 @@ public class FactionFormManager : MonoBehaviour
     // Takes form data and builds faction
     public FactionData BuildFaction()
     {
-        // Turn ability list into array
+        // Turn unit list into array
+        foreach (UnitData unit in currUnits)
+        {
+            unit.SetBanner(bannerData);
+        }
         UnitData[] unitsToSave = new UnitData[currUnits.Count];
         currUnits.CopyTo(unitsToSave);
         FactionData newFaction = new FactionData(nameField.text, bannerData, unitsToSave);

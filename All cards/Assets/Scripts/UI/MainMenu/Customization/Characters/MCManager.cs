@@ -52,7 +52,7 @@ public class MCManager : MonoBehaviour
             // Get character selected
             CharacterData currCharacter = SaveData.GetCharacters()[ccManager.lists[0].value];
 
-            nameField.text = currCharacter.characterName;
+            nameField.text = currCharacter.GetName();
             statNums = new int[currCharacter.stats.Length];
             currCharacter.stats.CopyTo(statNums, 0);
             flyingToggle.isOn = currCharacter.flying;
@@ -238,7 +238,7 @@ public class MCManager : MonoBehaviour
     }
     public int GetAttackRange()
     {
-        return statNums[0];
+        return statNums[1];
     }
     public int GetPrecision()
     {

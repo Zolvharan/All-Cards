@@ -152,10 +152,10 @@ public class UnitFormManager : MonoBehaviour
                     else
                         factionFormManager.currUnits.Add(BuildUnit());
                     factionFormManager.RefreshUnits();
-                    enemyGenManager.DisplayFactionForm();
-                    this.gameObject.SetActive(false);
                 }
             }
+            enemyGenManager.DisplayFactionForm();
+            this.gameObject.SetActive(false);
         }
         else
         {

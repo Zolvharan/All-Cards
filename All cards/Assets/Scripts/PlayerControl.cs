@@ -7,11 +7,12 @@ using System;
 
 public class PlayerControl : MonoBehaviour
 {
+    public ActionDisplay actionDisplay;
+
     public bool playerLost;
 
     public Camera playerCam;
-    public Inputs inputs;
-    Vector3 CameraDirection;
+    Vector3 cameraDirection;
     IEnumerator move;
     IEnumerator scroll;
     Tile prevTile;
@@ -47,121 +48,136 @@ public class PlayerControl : MonoBehaviour
         casting = false;
         HashSet<Tile> targetedTiles = new HashSet<Tile>();
         abilityMenuOpen = false;
-        CameraDirection = new Vector3(0, 0, 0);
+        cameraDirection = new Vector3(0, 0, 0);
         currTile = null;
     }
 
     // Update is called once per frame
     void Update()
     {
-        // do not allow selection if ability menu is open
-        if (Input.GetKeyDown(inputs.select) && playerTurn && !abilityMenuOpen)
+        // Cannot select tiles when confirming
+        if (!confirming)
         {
-            Vector3 mousePos = playerCam.ScreenToWorldPoint(Input.mousePosition);
-            RaycastHit2D rayHit = Physics2D.Raycast(new Vector2(mousePos.x, mousePos.y), Vector2.zero);
-
-            // Do nothing if UI is clicked
-            if (rayHit.collider == null || rayHit.collider.gameObject.layer != 5)
+            // Move
+            if (Input.GetKeyDown(Inputs.move) && playerTurn && currTile != null && currTile.currUnit != null && !currTile.currUnit.moved && !abilityMenuOpen && !casting && !attacking)
             {
-                // attempt to move unit
-                if (moving && rayHit && rayHit.collider.GetComponent<Tile>() != null && !confirming)
+                Vector3 mousePos = playerCam.ScreenToWorldPoint(Input.mousePosition);
+                RaycastHit2D rayHit = Physics2D.Raycast(new Vector2(mousePos.x, mousePos.y), Vector2.zero);
+                // Do nothing if UI is clicked
+                if (rayHit.collider == null || rayHit.collider.gameObject.layer != 5)
                 {
-                    // checks that tile is with move range
-                    HashSet<Tile> tiles = currTile.GetTiles(currTile, currTile.currUnit.GetMoveSpeed(), currTile.currUnit.GetFlying());
-                    if (tiles.Contains(rayHit.collider.GetComponent<Tile>()) && !rayHit.collider.GetComponent<Tile>().occupied)
+                    // attempt to move unit
+                    if (rayHit && rayHit.collider.GetComponent<Tile>() != null && !confirming)
                     {
-                        // prompts user for confirmation before finishing move
-                        currUnit = currTile.currUnit;
-                        rayHit.collider.GetComponent<Tile>().PlaceUnit(currUnit);
-                        currTile.SelectTile();
-                        UI.ToggleCharDisplay(false, true, true);
-                        prevTile = currTile;
+                        // checks that tile is with move range
+                        HashSet<Tile> tiles = currTile.GetTiles(currTile, currTile.currUnit.GetMoveSpeed(), currTile.currUnit.GetFlying());
+                        if (tiles.Contains(rayHit.collider.GetComponent<Tile>()) && !rayHit.collider.GetComponent<Tile>().occupied)
+                        {
+                            // prompts user for confirmation before finishing move
+                            currUnit = currTile.currUnit;
+                            rayHit.collider.GetComponent<Tile>().PlaceUnit(currUnit);
+                            currTile.SelectTile();
+                            UI.ToggleCharDisplay(false, true, true);
+                            prevTile = currTile;
+                            currTile = rayHit.collider.GetComponent<Tile>();
+                            confirming = true;
+                            moving = true;
+                        }
+                    }
+                }
+            }
+            // do not allow selection if ability menu is open
+            else if (Input.GetKeyDown(Inputs.select) && playerTurn && !abilityMenuOpen && !confirming)
+            {
+                Vector3 mousePos = playerCam.ScreenToWorldPoint(Input.mousePosition);
+                RaycastHit2D rayHit = Physics2D.Raycast(new Vector2(mousePos.x, mousePos.y), Vector2.zero);
+
+                // Do nothing if UI is clicked
+                if (rayHit.collider == null || rayHit.collider.gameObject.layer != 5)
+                {
+                    // attack unit if clicked
+                    if (attacking && rayHit && rayHit.collider.GetComponent<Tile>() != null && rayHit.collider.GetComponent<Tile>().currUnit != null && !confirming)
+                    {
+                        tileDistance = Math.Abs(rayHit.collider.GetComponent<Tile>().xPos - currTile.xPos) + Math.Abs(rayHit.collider.GetComponent<Tile>().yPos - currTile.yPos);
+                        // locks unit if attack is allowed
+                        if (tileDistance <= currTile.currUnit.GetAttackRange() && currTile.currUnit.CanAttack(rayHit.collider.GetComponent<Tile>().currUnit))
+                        {
+                            currUnit = rayHit.collider.GetComponent<Tile>().currUnit;
+                            UI.ToggleCharDisplay(false, true, true);
+                            UI.DisplayForecast(rayHit.collider.GetComponent<Tile>().currUnit, currTile.currUnit.GetStats()[4], currTile.currUnit.GetStats()[5]);
+                            confirming = true;
+                        }
+                    }
+
+                    // change selected tile
+                    else if (rayHit && rayHit.collider.GetComponent<Tile>() != null && !attacking)
+                    {
+                        if (currTile != null)
+                        {
+                            currTile.SelectTile();
+                            currTile = null;
+                        }
                         currTile = rayHit.collider.GetComponent<Tile>();
-                        confirming = true;
+                        rayHit.collider.GetComponent<Tile>().SelectTile();
                     }
-                }
 
-                // attack unit if clicked
-                else if (attacking && rayHit && rayHit.collider.GetComponent<Tile>() != null && rayHit.collider.GetComponent<Tile>().currUnit != null && !confirming)
-                {
-                    tileDistance = Math.Abs(rayHit.collider.GetComponent<Tile>().xPos - currTile.xPos) + Math.Abs(rayHit.collider.GetComponent<Tile>().yPos - currTile.yPos);
-                    // locks unit if attack is allowed
-                    if (tileDistance <= currTile.currUnit.GetAttackRange() && currTile.currUnit.CanAttack(rayHit.collider.GetComponent<Tile>().currUnit))
-                    {
-                        currUnit = rayHit.collider.GetComponent<Tile>().currUnit;
-                        UI.ToggleCharDisplay(false, true, true);
-                        UI.DisplayForecast(rayHit.collider.GetComponent<Tile>().currUnit, currTile.currUnit.GetStats()[4], currTile.currUnit.GetStats()[5]);
-                        confirming = true;
-                    }
-                }
-
-                // change selected tile
-                else if (rayHit && rayHit.collider.GetComponent<Tile>() != null && !moving && !attacking)
-                {
-                    if (currTile != null)
+                    // deselect tile
+                    else if (currTile != null && !attacking)
                     {
                         currTile.SelectTile();
                         currTile = null;
                     }
-                    currTile = rayHit.collider.GetComponent<Tile>();
-                    rayHit.collider.GetComponent<Tile>().SelectTile();
-                }
-
-                // deselect tile
-                else if (currTile != null && !moving && !attacking)
-                {
-                    currTile.SelectTile();
-                    currTile = null;
                 }
             }
-        }
-        else if (Input.GetKeyDown(inputs.select) && playerTurn && casting && !confirming)
-        {
-            // Display ability
-            Vector3 mousePos = playerCam.ScreenToWorldPoint(Input.mousePosition);
-            RaycastHit2D rayHit = Physics2D.Raycast(new Vector2(mousePos.x, mousePos.y), Vector2.zero);
-
-            if (rayHit && rayHit.collider.GetComponent<Tile>() != null)
+            else if (Input.GetKeyDown(Inputs.select) && playerTurn && casting)
             {
-                tileDistance = Math.Abs(rayHit.collider.GetComponent<Tile>().xPos - currTile.xPos) + Math.Abs(rayHit.collider.GetComponent<Tile>().yPos - currTile.yPos);
-                targetedTile = rayHit.collider.GetComponent<Tile>();
-                if (tileDistance <= abilityRange)
+                // Display ability
+                Vector3 mousePos = playerCam.ScreenToWorldPoint(Input.mousePosition);
+                RaycastHit2D rayHit = Physics2D.Raycast(new Vector2(mousePos.x, mousePos.y), Vector2.zero);
+
+                if (rayHit && rayHit.collider.GetComponent<Tile>() != null)
                 {
-                    currTile.HighlightTiles(2, abilityRange);
-                    targetedTile.HighlightTiles(3, abilityRadius);
-                    targetedTiles = rayHit.collider.GetComponent<Tile>().CollectTiles(abilityRadius);
-                    confirming = true;
-                    UI.ToggleCharDisplay(false, true, true);
-                    UI.DisplayForecast(targetedTile.currUnit, currTile.currUnit.GetAbility(abilityIndex, usingItems), currTile.currUnit);
+                    tileDistance = Math.Abs(rayHit.collider.GetComponent<Tile>().xPos - currTile.xPos) + Math.Abs(rayHit.collider.GetComponent<Tile>().yPos - currTile.yPos);
+                    targetedTile = rayHit.collider.GetComponent<Tile>();
+                    if (tileDistance <= abilityRange)
+                    {
+                        currTile.HighlightTiles(2, abilityRange);
+                        targetedTile.HighlightTiles(3, abilityRadius);
+                        targetedTiles = rayHit.collider.GetComponent<Tile>().CollectTiles(abilityRadius);
+                        confirming = true;
+                        UI.ToggleCharDisplay(false, true, true);
+                        UI.DisplayForecast(targetedTile.currUnit, currTile.currUnit.GetAbility(abilityIndex, usingItems), currTile.currUnit);
+                    }
                 }
             }
         }
 
         // move camera
-        if (Input.GetKeyDown(inputs.cameraUp))
-            CameraDirection = new Vector3(CameraDirection.x, CameraDirection.y + 0.2f, 0);
-        if (Input.GetKeyDown(inputs.cameraDown))
-            CameraDirection = new Vector3(CameraDirection.x, CameraDirection.y - 0.2f, 0);
-        if (Input.GetKeyDown(inputs.cameraLeft))
-            CameraDirection = new Vector3(CameraDirection.x - 0.2f, CameraDirection.y, 0);
-        if (Input.GetKeyDown(inputs.cameraRight))
-            CameraDirection = new Vector3(CameraDirection.x + 0.2f, CameraDirection.y, 0);
-        if (CameraDirection != new Vector3(0, 0, 0) && move == null)
+        if (Input.GetKeyDown(Inputs.cameraUp))
+            cameraDirection = new Vector3(cameraDirection.x, cameraDirection.y + 0.2f, 0);
+        if (Input.GetKeyDown(Inputs.cameraDown))
+            cameraDirection = new Vector3(cameraDirection.x, cameraDirection.y - 0.2f, 0);
+        if (Input.GetKeyDown(Inputs.cameraLeft))
+            cameraDirection = new Vector3(cameraDirection.x - 0.2f, cameraDirection.y, 0);
+        if (Input.GetKeyDown(Inputs.cameraRight))
+            cameraDirection = new Vector3(cameraDirection.x + 0.2f, cameraDirection.y, 0);
+        if (cameraDirection != new Vector3(0, 0, 0) && move == null)
         {
             move = MoveCamera();
             StartCoroutine(move);
         }
 
-        if (Input.GetKeyUp(inputs.cameraUp))
-            CameraDirection = new Vector3(CameraDirection.x, CameraDirection.y - 0.2f, 0);
-        if (Input.GetKeyUp(inputs.cameraDown))
-            CameraDirection = new Vector3(CameraDirection.x, CameraDirection.y + 0.2f, 0);
-        if (Input.GetKeyUp(inputs.cameraLeft))
-            CameraDirection = new Vector3(CameraDirection.x + 0.2f, CameraDirection.y, 0);
-        if (Input.GetKeyUp(inputs.cameraRight))
-            CameraDirection = new Vector3(CameraDirection.x - 0.2f, CameraDirection.y, 0);
-        if (CameraDirection == new Vector3(0, 0, 0) && move != null)
+        if (Input.GetKeyUp(Inputs.cameraUp))
+            cameraDirection = new Vector3(cameraDirection.x, cameraDirection.y - 0.2f, 0);
+        if (Input.GetKeyUp(Inputs.cameraDown))
+            cameraDirection = new Vector3(cameraDirection.x, cameraDirection.y + 0.2f, 0);
+        if (Input.GetKeyUp(Inputs.cameraLeft))
+            cameraDirection = new Vector3(cameraDirection.x + 0.2f, cameraDirection.y, 0);
+        if (Input.GetKeyUp(Inputs.cameraRight))
+            cameraDirection = new Vector3(cameraDirection.x - 0.2f, cameraDirection.y, 0);
+        if (!Input.GetKey(Inputs.cameraUp) && !Input.GetKey(Inputs.cameraDown) && !Input.GetKey(Inputs.cameraLeft) && !Input.GetKey(Inputs.cameraRight) && move != null)
         {
+            cameraDirection = new Vector3(0, 0, 0);
             StopCoroutine(move);
             move = null;
         }
@@ -182,7 +198,7 @@ public class PlayerControl : MonoBehaviour
     {
         while (true)
         {
-            playerCam.transform.position += CameraDirection;
+            playerCam.transform.position += cameraDirection;
             // Camera bounds control
             if (playerCam.transform.position.x > 20)
                 playerCam.transform.position = new Vector3(20, playerCam.transform.position.y, -10);
@@ -210,23 +226,18 @@ public class PlayerControl : MonoBehaviour
         }
     }
 
-    public void Moving()
-    {
-        UI.LockAction(moving, 3);
-        moving = !moving;
-    }
     public void Attacking()
     {
         if (attacking)
         {
             currTile.HighlightTiles(2);
             UI.LockAction(attacking, 0);
-            if (UI.moveButton.interactable == true)
+            if (!currTile.currUnit.moved)
                 currTile.HighlightTiles(1);
         }
         else
         {
-            if (UI.moveButton.interactable == true)
+            if (!currTile.currUnit.moved)
                 currTile.HighlightTiles(1);
             UI.LockAction(attacking, 0);
             currTile.HighlightTiles(2);
@@ -266,12 +277,12 @@ public class PlayerControl : MonoBehaviour
         {
             UI.AbilityClick(currTile.currUnit, currTile, items);
             UI.LockAction(abilityMenuOpen, buttonIndex);
-            if (UI.moveButton.interactable && currTile.currUnit != null)
+            if (currTile.currUnit != null && !currTile.currUnit.moved)
                 currTile.HighlightTiles(1);
         }
         else
         {
-            if (UI.moveButton.interactable)
+            if (!currTile.currUnit.moved)
                 currTile.HighlightTiles(1);
             UI.LockAction(abilityMenuOpen, buttonIndex);
             UI.AbilityClick(currTile.currUnit, currTile, items);
@@ -334,7 +345,7 @@ public class PlayerControl : MonoBehaviour
         }
         else if (attacking)
         {
-            currTile.currUnit.Attack(currUnit);
+            currTile.currUnit.Attack(currUnit, actionDisplay);
             attacking = false;
             currTile.HighlightTiles(2);
             currTile.SelectTile(false);
@@ -346,11 +357,12 @@ public class PlayerControl : MonoBehaviour
         }
         else
         {
+            casting = false;
             targetedTile.HighlightTiles(3, abilityRadius);
             confirming = false;
             OpenAbilityMenu(usingItems);
             currTile.SelectTile();
-            currTile.currUnit.UseAbility(abilityIndex, targetedTiles, usingItems);
+            currTile.currUnit.UseAbility(abilityIndex, targetedTiles, usingItems, actionDisplay);
             currTile = null;
             UI.HideForecast();
         }
@@ -362,12 +374,12 @@ public class PlayerControl : MonoBehaviour
         {
             // revert to move selection
             confirming = false;
+            moving = false;
             UI.ToggleCharDisplay(true);
             currUnit = currTile.currUnit;
             currTile.ClearUnit(false);
             prevTile.PlaceUnit(currUnit);
             prevTile.SelectTile();
-            UI.LockAction(false, 3);
             currTile = prevTile;
         }
         else if (attacking)

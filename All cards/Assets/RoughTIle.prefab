@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4379823931267533723}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.058, y: 0.429, z: -14.061502}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -95,7 +95,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   image: {fileID: 21300000, guid: 1598888dbfa7d4f45adaef3713510198, type: 3}
-  selectImage: {fileID: 21300000, guid: b613c71e03a8a1147ad5cc38bd7804bd, type: 3}
-  attackImage: {fileID: 21300000, guid: de4d47734b24a6040b6ed0e877feefc4, type: 3}
-  abilityImage: {fileID: 21300000, guid: f3ed37cde87722f448fd0c7dab7473b3, type: 3}
+  tintImage: {fileID: 21300000, guid: 579a435dbec1fbf4dbe9e02dc7afcfb3, type: 3}
   moveWeight: 2

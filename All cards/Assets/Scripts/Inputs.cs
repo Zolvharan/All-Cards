@@ -3,27 +3,23 @@ using System.Collections.Generic;
 using System.ComponentModel.Design;
 using UnityEngine;
 
-public class Inputs : MonoBehaviour
+public static class Inputs
 {
-    public KeyCode select;
-    public KeyCode cameraUp;
-    public KeyCode cameraDown;
-    public KeyCode cameraLeft;
-    public KeyCode cameraRight;
+    public static KeyCode select;
+    public static KeyCode move;
+    public static KeyCode cameraUp;
+    public static KeyCode cameraDown;
+    public static KeyCode cameraLeft;
+    public static KeyCode cameraRight;
 
     // Start is called before the first frame update
-    void Start()
+    public static void InitInputs()
     {
         select = KeyCode.Mouse0;
+        move = KeyCode.Mouse1;
         cameraUp = KeyCode.W;
         cameraDown = KeyCode.S;
         cameraLeft = KeyCode.A;
         cameraRight = KeyCode.D;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }

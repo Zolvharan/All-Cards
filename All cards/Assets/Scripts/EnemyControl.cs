@@ -7,6 +7,7 @@ public class EnemyControl : MonoBehaviour
     public List<Enemy> enemies;
     public PlayerControl player;
     public BUIManager UI;
+    public ActionDisplay actionDisplay;
 
     public void SetEnemies(List<Enemy> newEnemies)
     {
@@ -38,5 +39,10 @@ public class EnemyControl : MonoBehaviour
                 enemy.Move();
         }
         player.StartTurn();
+    }
+
+    public ActionDisplay GetActionDisplay()
+    {
+        return actionDisplay;
     }
 }

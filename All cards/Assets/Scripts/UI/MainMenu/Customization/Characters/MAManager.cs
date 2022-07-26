@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 // Manages the ability creation and editing menus
 public class MAManager : MonoBehaviour
@@ -50,6 +51,30 @@ public class MAManager : MonoBehaviour
     bool isInChar;
     bool editing;
 
+    public Text energyBaseTextNum;
+    public Text energyAdjustedTextNum;
+    int currBaseEnergy;
+    int currStrength;
+    int currRange;
+    int currPrecision;
+
+    const float BASE_ENERGY_COST = -1f;
+    const float BASE_STAT_MODIFIER = 0.5f;
+    const float PUSH_STAT_MODIFIER = 0.5f;
+    const float COST_ENERGY_MODIFIER = 0.5f;
+    const float DURATION_COST_MODIFIER = 1.5f;
+    const float CURR_STRENGTH_MODIFIER = 0.5f;
+
+    const float RANGE_COST_MODIFIER = 0.1f;
+    const float PRECISION_COST_MODIFIER = 0.1f;
+    const float RADIUS_COST_MODIFIER = 1f;
+
+    const float DIRECTED_COST_MODIFIER = 1.2f;
+    const float BIASED_COST_MODIFIER = 2f;
+
+    const float NEGATIVE_RANGE_DISCOUNT = 0.1f;
+    const float NEGATIVE_PRECISION_DISCOUNT = 0.1f;
+
     // Accesses ability in char form
     public void OpenAbilityFormInCharacter(bool isEditing)
     {
@@ -62,9 +87,12 @@ public class MAManager : MonoBehaviour
         else if (!(charFormManager.abilityList.options.Count == 0))
             InitAbilityForm(true, charFormManager.currAbilities[charFormManager.abilityList.value]);
 
-        baseStatTexts[0].text = "(" + charFormManager.GetStrength() + ")";
-        baseStatTexts[1].text = "(" + charFormManager.GetAttackRange() + ")";
-        baseStatTexts[2].text = "(" + charFormManager.GetPrecision() + ")";
+        currStrength = charFormManager.GetStrength();
+        currRange = charFormManager.GetAttackRange();
+        currPrecision = charFormManager.GetPrecision();
+        baseStatTexts[0].text = "(" + currStrength + ")";
+        baseStatTexts[1].text = "(" + currRange + ")";
+        baseStatTexts[2].text = "(" + currPrecision + ")";
     }
     // Accessess ability directly
     public void OpenAbilityForm(bool isEditing)
@@ -120,6 +148,7 @@ public class MAManager : MonoBehaviour
         viewTexts[2].text = "Cost";
         SetViewNums();
 
+        SetEnergyCost();
         characterManager.DisplayAbilityForm();
     }
 
@@ -138,6 +167,7 @@ public class MAManager : MonoBehaviour
     {
         if (saveChanges)
         {
+            costPotencies[9] = CalculateEnergyCost(true);
             AbilityData newAbility = new AbilityData(nameField.text, directed, biased, ally, potencies, durations, costPotencies, costDurations, globalStats, pushInts);
             ReOpenForm(newAbility);
         }
@@ -166,6 +196,7 @@ public class MAManager : MonoBehaviour
     // Opens ability saving form
     public void SaveAbility()
     {
+        costPotencies[9] = CalculateEnergyCost(true);
         AbilityData newAbility = new AbilityData(nameField.text, directed, biased, ally, potencies, durations, costPotencies, costDurations, globalStats, pushInts);
 
         // If editing from main ability list, init save location to ability being edited
@@ -177,14 +208,58 @@ public class MAManager : MonoBehaviour
         characterManager.DisplaySavedAbilityData(null, isInChar);
     }
 
-    // TODO: Calculate energy cost
-    public void CalculateEnergyCost()
+    // Adjusted calcuates current stat modifiers
+    public int CalculateEnergyCost(bool adjusted)
     {
-        // Radius will probably multiply cost
+        float cost = BASE_ENERGY_COST;
+        for (int i = 0; i < potencies.Length - 1; i++)
+        {
+            if (!adjusted || i != 2)
+                cost += (Math.Abs(potencies[i]) * (durations[i] > 0 ? (durations[i] * DURATION_COST_MODIFIER) : 1)) * BASE_STAT_MODIFIER;
+            // effect strength
+            else
+                cost += (Math.Abs(potencies[i] - (currStrength * CURR_STRENGTH_MODIFIER)) * (durations[i] > 0 ? (durations[i] * DURATION_COST_MODIFIER) : 1)) * BASE_STAT_MODIFIER;
+            cost -= (costPotencies[i] * (costDurations[i] > 0 ? (costDurations[i] * DURATION_COST_MODIFIER) : 1)) * COST_ENERGY_MODIFIER * BASE_STAT_MODIFIER;
+        }
+        for (int i = 0; i < pushInts.Length; i++)
+        {
+            cost += Math.Abs(pushInts[i]) * PUSH_STAT_MODIFIER;
+        }
+        // Don't multiply energy restore
+        if (cost >= 0)
+        {
+            if (globalStats[0] > 0)
+            {
+                // Multiply discount if stat is negative
+                if (adjusted)
+                    cost *= (globalStats[0] - currRange) * (RANGE_COST_MODIFIER + 1) * globalStats[0] - currRange < 0 ? -(NEGATIVE_RANGE_DISCOUNT + 1) : 1;
+                else
+                    cost *= globalStats[0] * (RANGE_COST_MODIFIER + 1);
+            }
+            if (globalStats[1] > 0)
+            {
+                if (adjusted)
+                    cost *= (globalStats[1] - currPrecision) * (PRECISION_COST_MODIFIER + 1) * globalStats[1] - currPrecision < 0 ? -(NEGATIVE_PRECISION_DISCOUNT + 1) : 1;
+                else
+                    cost *= globalStats[1] * (PRECISION_COST_MODIFIER + 1);
+            }
+            if (globalStats[2] > 0)
+                cost *= globalStats[2] * (RADIUS_COST_MODIFIER + 1);
+            if (directed)
+                cost *= DIRECTED_COST_MODIFIER;
+            else if (biased)
+                cost *= BIASED_COST_MODIFIER;
+        }
 
-        // TODO: total energy cost will adjust per character
-        // If a cost exceeds max stat, excess cost is ignored
-        // range, precision, and probably strength will give some discount
+        //return (int)Math.Round(cost);
+        return 0;
+    }
+    public void SetEnergyCost()
+    {
+        currBaseEnergy = CalculateEnergyCost(false);
+        energyBaseTextNum.text = currBaseEnergy.ToString() + " Energy";
+        if (isInChar)
+            energyAdjustedTextNum.text = "(" + CalculateEnergyCost(true).ToString() + ")";
     }
 
     // Edits targeting and toggle based on toggle parameter
@@ -212,6 +287,7 @@ public class MAManager : MonoBehaviour
                 allyToggle.interactable = false;
             }
         }
+        SetEnergyCost();
     }
     // Increment stat and display
     public void IncrementStat(int statIndex)
@@ -244,6 +320,7 @@ public class MAManager : MonoBehaviour
             if (!potencyView && !effectView && costDurations[statIndex] < MAX_DURATION)
                 statTextNums[statIndex].text = (++costDurations[statIndex]).ToString();
         }
+        SetEnergyCost();
     }
     public void DecrementStat(int statIndex)
     {
@@ -275,6 +352,7 @@ public class MAManager : MonoBehaviour
             if (!potencyView && !effectView && costDurations[statIndex] > MIN_DURATION_NUMS[statIndex])
                 statTextNums[statIndex].text = (--costDurations[statIndex]).ToString();
         }
+        SetEnergyCost();
     }
 
     // Sets view to or from potency

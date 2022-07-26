@@ -35,6 +35,9 @@ public class CharacterStats : MonoBehaviour
 
     public Tile currTile;
 
+    const float CRIT_MULTIPLIER = 1.5f;
+    const float OVERHEAL_FALLOFF = 0.5f;
+
     // Initializes variables
     public void ConstructCharacter(string newName, Ability[] newAbilities, Sprite newPortrait, Sprite newBattleSprite, bool isFlying, Dictionary<String, int> newBaseStats, List<Item> newItems, bool isPlayer)
     {
@@ -107,22 +110,25 @@ public class CharacterStats : MonoBehaviour
         }
     }
 
-    public void Attack(CharacterStats unit)
+    public void Attack(CharacterStats unit, ActionDisplay actionDisplay)
     {
         // Determine attack hit
         System.Random random = new System.Random();
         double hit = (100 * Math.Pow(DEX_MULTIPLIER, unit.GetStats()[7]) + (currStats["precision"] * 10)) / 100 + random.NextDouble();
+
+        // Calculate damage
+        int damage = currStats["strength"];
+
         // Crit
         if (hit >= 2)
-            unit.TakeDamage((int)Math.Floor(currStats["strength"] * 1.5f));
-        // Hit
-        else if (hit >= 1)
-            unit.TakeDamage(currStats["strength"]);
-        else
-        {
-            UnityEngine.Debug.Log("Miss");
-            // TODO: Miss display (also hit display)
-        }
+            damage = (int)Math.Floor((float)damage * CRIT_MULTIPLIER);
+        // Miss
+        else if (hit < 1)
+            damage = -1;
+
+        actionDisplay.AttackDisplay(unit, unit.AdjustDamage(damage), hit >= 2);
+        unit.TakeDamage(damage);
+
         attacked = true;
     }
     // returns whether target is friend or foe
@@ -135,16 +141,16 @@ public class CharacterStats : MonoBehaviour
     {
         return isItems ? items[abilityIndex] : abilities[abilityIndex];
     }
-    public void UseAbility(int abilityIndex, HashSet<Tile> tiles, bool isItems)
+    public void UseAbility(int abilityIndex, HashSet<Tile> tiles, bool isItems, ActionDisplay actionDisplay)
     {
         if (!isItems)
         {
-            abilities[abilityIndex].UseAbility(tiles, player, this);
+            abilities[abilityIndex].UseAbility(tiles, player, this, actionDisplay);
         }
         else
         {
             // Use item and remove it if it is expended
-            if (items[abilityIndex].UseItem(tiles, player, this))
+            if (items[abilityIndex].UseItem(tiles, player, this, actionDisplay))
                 items.RemoveAt(abilityIndex);
         }
         attacked = true;
@@ -156,10 +162,17 @@ public class CharacterStats : MonoBehaviour
         {
             currStats["health"] -= attackPower;
             if (currStats["health"] <= 0)
-                Die();
+                ActionDisplay.AddDeath(this);
         }
     }
-    virtual protected void Die()
+    public int AdjustDamage(int currDamage)
+    {
+        if (currDamage == -1)
+            return currDamage;
+        currDamage -= currStats["defense"];
+        return currDamage < 0 ? 0 : currDamage;
+    }
+    virtual public void Die()
     {
         dead = true;
         currTile.ClearUnit(false);
@@ -167,6 +180,32 @@ public class CharacterStats : MonoBehaviour
         this.gameObject.SetActive(false);
     }
 
+    // For animation display
+    public int GetEffectedPotency(string statName, int potency)
+    {
+        // Adjust numbers for resistance
+        if (statName != "health" && statName != "energy" && potency < 0)
+        {
+            potency += currStats["resistance"];
+            // Penalty cannot be positive
+            if (potency > 0)
+                potency = 0;
+        }
+        else if (statName == "health")
+        {
+            // Damage
+            if (potency < 0)
+            {
+                potency += currStats["defense"];
+                if (potency > 0)
+                    potency = 0;
+            }
+            // Healing
+            else if (potency > 0 && currStats["health"] + potency > baseStats["health"])
+                potency = GetHealing(potency);
+        }
+        return potency;
+    }
     // bypass is used for when an ability cost is applied
     public void AddStatEffect(string statName, int duration, int potency, bool bypassDefAndRes = false)
     {
@@ -205,7 +244,7 @@ public class CharacterStats : MonoBehaviour
                 currStats[statName] = 0;
         }
         if (currStats["health"] <= 0)
-            Die();
+            ActionDisplay.AddDeath(this);
     }
     // Health is handled differently from other stats (function handles energy too)
     private void AdjustHealth(int potency, bool health, bool bypassDefAndRes = false)

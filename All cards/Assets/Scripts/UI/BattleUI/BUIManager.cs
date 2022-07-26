@@ -5,6 +5,9 @@ using UnityEngine.UI;
 
 public class BUIManager : MonoBehaviour
 {
+    public MMManager mainMenuManager;
+    public LevelGenerator level;
+
     public GameObject menu;
     public GameObject menuButton;
     public GameObject characterDisplay;
@@ -12,7 +15,6 @@ public class BUIManager : MonoBehaviour
     public GameObject energy;
     public GameObject overcharge;
     public SpriteRenderer charImage;
-    public Button moveButton;
     public Button[] actionButtons;
     public Button[] confirmButtons;
 
@@ -29,7 +31,13 @@ public class BUIManager : MonoBehaviour
 
     public bool locked = false;
 
-    bool lockedMove = false;
+    public void ReturnToMenu()
+    {
+        menu.SetActive(false);
+        level.DestroyLevel();
+        mainMenuManager.OpenFrontPage();
+        this.gameObject.SetActive(false);
+    }
 
     // Called by Tile.SelectTile
     public void DisplayCharacter(CharacterStats character)
@@ -38,10 +46,6 @@ public class BUIManager : MonoBehaviour
             menu.SetActive(false);
 
         charImage.sprite = character.portrait;
-        if (character.moved == true)
-            moveButton.interactable = false;
-        else
-            moveButton.interactable = true;
         if (character.attacked == true)
         {
             foreach(Button button in actionButtons)
@@ -166,14 +170,6 @@ public class BUIManager : MonoBehaviour
             actionButtons[1].interactable = toLock;
         if (unlockedButton != 2)
             actionButtons[2].interactable = toLock;
-
-
-        if (unlockedButton != 3 && !moveButton.interactable && !toLock)
-            lockedMove = true;
-        else if (unlockedButton != 3 && lockedMove)
-            lockedMove = false;
-        else if (unlockedButton != 3)
-            moveButton.interactable = toLock;
     }
     public void UnlockMenu()
     {

@@ -15,6 +15,9 @@ public class BattleSetupUI : MonoBehaviour
     public Transform baseCharPrefab;
     public Transform baseEnemyPrefab;
 
+    public Dropdown tileTypeList;
+    public Dropdown tilesetList;
+
     int[] charIndexes;
     int currCharIndex;
     const int MAX_CHARACTERS = 6;
@@ -72,6 +75,9 @@ public class BattleSetupUI : MonoBehaviour
         factionList.AddOptions(factionNames);
         factionList.value = 0;
         SelectFaction();
+
+        // Init tileset selection
+        SetTileType();
     }
 
     public void StartCombat()
@@ -110,8 +116,24 @@ public class BattleSetupUI : MonoBehaviour
             }
         }
 
-        generator.GenerateLevel(15, 10, newCharacters, newEnemies);
+        switch (tileTypeList.value)
+        {
+            case 0:
+                generator.GenerateExteriorLevel(newCharacters, newEnemies, GetExteriorTileset());
+                break;
+            case 1:
+                generator.GenerateMapLevel(newCharacters, newEnemies, GetMapTileset());
+                break;
+        }
         player.StartTurn();
+    }
+    public ExteriorTilesetData GetExteriorTileset()
+    {
+        return SaveData.GetETilesets()[tilesetList.value];
+    }
+    public MapEditorData GetMapTileset()
+    {
+        return SaveData.GetMapTilesets()[tilesetList.value];
     }
 
     // Character and enemy list functions
@@ -237,5 +259,43 @@ public class BattleSetupUI : MonoBehaviour
     public void SetItems(List<Item> items, int itemsIndex)
     {
         currItemsArray[itemsIndex] = items;
+    }
+
+    // Tileset methods
+    // Dropdown change
+    public void SetTileType()
+    {
+        switch (tileTypeList.value)
+        {
+            case 0:
+                GetExteriorTilesets();
+                break;
+            case 1:
+                GetMapTilesets();
+                break;
+        }
+    }
+
+    public void GetExteriorTilesets()
+    {
+        List<ExteriorTilesetData> tilesets = SaveData.GetETilesets();
+        List<string> tileNames = new List<string>();
+        foreach (ExteriorTilesetData tileset in tilesets)
+        {
+            tileNames.Add(tileset.GetName());
+        }
+        tilesetList.ClearOptions();
+        tilesetList.AddOptions(tileNames);
+    }
+    public void GetMapTilesets()
+    {
+        List<MapEditorData> tilesets = SaveData.GetMapTilesets();
+        List<string> tileNames = new List<string>();
+        foreach (MapEditorData tileset in tilesets)
+        {
+            tileNames.Add(tileset.GetName());
+        }
+        tilesetList.ClearOptions();
+        tilesetList.AddOptions(tileNames);
     }
 }

@@ -13,6 +13,7 @@ public class TESTCODE : MonoBehaviour
         //generator.GenerateLevel(15, 10);
         //player.StartTurn();
         SaveData.LoadData();
+        Inputs.InitInputs();
     }
 
     // Update is called once per frame

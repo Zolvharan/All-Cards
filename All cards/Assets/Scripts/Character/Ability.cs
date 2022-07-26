@@ -74,8 +74,15 @@ public class Ability
     }
 
     // player determines relative friend and foe, caster is used to apply cost
-    public void UseAbility(HashSet<Tile> tiles, bool player, CharacterStats caster)
+    public void UseAbility(HashSet<Tile> tiles, bool player, CharacterStats caster, ActionDisplay actionDisplay)
     {
+        // Data collected for animation display
+        List<CharacterStats> effectedUnits = new List<CharacterStats>();
+        List<int[]> preStats = new List<int[]>();
+        List<int[]> preDurations = new List<int[]>();
+        List<int[]> effectivePotencies = new List<int[]>();
+        List<bool[]> isCrits = new List<bool[]>();
+
         // Used for biased abilities
         int reverseEffect = 1;
         System.Random random = new System.Random();
@@ -88,6 +95,13 @@ public class Ability
         {
             if (tile.currUnit != null)
             {
+                // Init display data
+                effectedUnits.Add(tile.currUnit);
+                preStats.Add(tile.currUnit.GetStats());
+                preDurations.Add(tile.currUnit.GetDurations());
+                effectivePotencies.Add(new int[10]);
+                isCrits.Add(new bool[10]);
+
                 if (!directed && biased && tile.currUnit.player != player)
                     reverseEffect = -1;
                 // ignore unit if ability is directed and it is not a target
@@ -97,22 +111,38 @@ public class Ability
                 randHitModifier = random.NextDouble();
                 posHit = 1 + (precision / 10) + randHitModifier;
                 negHit = (100 * Math.Pow(CharacterStats.DEX_MULTIPLIER, tile.currUnit.GetStats()[7]) + (precision * 10)) / 100 + randHitModifier;
+
+                string target;
                 // affect stat of each unit in possible AOE across duration
-                foreach (string target in CharacterStats.statTargets)
+                for (int i = 0; i < CharacterStats.statTargets.Length; i++)
                 {
+                    target = CharacterStats.statTargets[i];
                     // Break if unit dies
                     if (tile.currUnit == null)
                         break;
                     // Ignore uneffected stats
                     if (potencies[target] == 0)
+                    {
+                        effectivePotencies[effectivePotencies.Count - 1][i] = -65535;
+                        isCrits[isCrits.Count - 1][i] = false;
                         continue;
+                    }
                     // determine hit, factor dexterity into equation if effect is negative
                     //hit = potencies[target] > 0 ? 1 + (precision / 10) + random.NextDouble() : (100 * Math.Pow(CharacterStats.DEX_MULTIPLIER, tile.currUnit.GetStats()[7]) + (precision * 10)) / 100 + random.NextDouble();
                     if ((potencies[target] > 0 && posHit >= 1) || (potencies[target] < 0 && negHit >= 1))
                     {
                         currHit = potencies[target] > 0 ? posHit : negHit;
+                        // Collect display data
+                        effectivePotencies[effectivePotencies.Count - 1][i] = effectedUnits[effectedUnits.Count - 1].GetEffectedPotency(target, (int)Math.Floor(potencies[target] * reverseEffect * (currHit >= 2 ? 1.5f : 1)));
+                        isCrits[isCrits.Count - 1][i] = currHit >= 2;
                         // Ignore uneffected stats (checks for tile variable in case character died)
                         tile.currUnit.AddStatEffect(target, durations[target], (int)Math.Floor(potencies[target] * reverseEffect * (currHit >= 2 ? 1.5f : 1)));    // Ternary tests crit
+                    }
+                    else if (potencies[target] != 0)
+                    {
+                        // miss
+                        effectivePotencies[effectivePotencies.Count - 1][i] = 65535;
+                        isCrits[isCrits.Count - 1][i] = false;
                     }
                 }
                 // Move unit if ability pushes. Will not push if no push is present, or if ability fails to hit enemy.
@@ -121,7 +151,6 @@ public class Ability
                 {
                     // TODO
                 }
-                // TODO: Miss display (also hit display)
                 if (negHit < 1)
                 {
                     UnityEngine.Debug.Log("Miss");
@@ -142,6 +171,23 @@ public class Ability
         {
             // TODO
         }
+
+        SetUpAbilityDisplay(effectedUnits, preStats, preDurations, effectivePotencies, isCrits, caster, actionDisplay);
+    }
+
+    void SetUpAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> effectivePotencies, List<bool[]> isCrits, CharacterStats caster, ActionDisplay actionDisplay)
+    {
+        int[] reDurations = new int[10];
+        int[] reCostPotencies = new int[10];
+        int[] reCostDurations = new int[10];
+        for (int i = 0; i < 10; i++)
+        {
+            reDurations[i] = durations[CharacterStats.statTargets[i]];
+            reCostPotencies[i] = costPotencies[CharacterStats.statTargets[i]];
+            reCostDurations[i] = costDurations[CharacterStats.statTargets[i]];
+        }
+
+        actionDisplay.AbilityDisplay(effectedUnits, preStats, preDurations, effectivePotencies, reDurations, isCrits, caster, reCostPotencies, reCostDurations, abilityName);
     }
 
     public Dictionary<string, int> GetPotencies()

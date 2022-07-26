@@ -7,13 +7,16 @@ using UnityEngine;
 public class Tile : MonoBehaviour
 {
     public SpriteRenderer image;
-    Sprite[] tileImages;
+    public SpriteRenderer tintImage;
+    // Defuault, selected, attacking, ability
+    Color32[] tints = { new Color32(255, 255, 255, 0), new Color32(0, 150, 255, 180), new Color32(255, 0, 0, 180), new Color32(255, 255, 0, 180) };
+
     public CharacterStats currUnit = null;
     public BUIManager UI;
 
     public int xPos;
     public int yPos;
-    public int moveWeight;
+    public float moveWeight;
     // Cannot be traversed even if flying
     //public bool impassable;
 
@@ -21,6 +24,10 @@ public class Tile : MonoBehaviour
     public bool occupied = false;
 
     public LevelGenerator map;
+
+    const int Z_OFFSET = -2;
+
+    TileData tileData;
 
     // Start is called before the first frame update
     void Start()
@@ -33,7 +40,7 @@ public class Tile : MonoBehaviour
         if (selected)
         {
             if (currUnit == null)
-                image.sprite = tileImages[0];
+                tintImage.color = tints[0];
             else
             {
                 if (!currUnit.moved && tilesHighlighted)
@@ -48,7 +55,7 @@ public class Tile : MonoBehaviour
         else
         {
             if (currUnit == null)
-                image.sprite = tileImages[1];
+                tintImage.color = tints[1];
             selected = true;
             if (currUnit != null)
             {
@@ -62,19 +69,17 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void CreateTile(TilePrefab tilePrefab, int initXPos, int initYPos)
+    public void ConstructTile(TileData newTileData, int initXPos, int initYPos)
     {
-        tileImages = new Sprite[4];
-
-        image.sprite = tilePrefab.image;
-        tileImages[0] = tilePrefab.image;
-        tileImages[1] = tilePrefab.selectImage;
-        tileImages[2] = tilePrefab.attackImage;
-        tileImages[3] = tilePrefab.abilityImage;
-        moveWeight = tilePrefab.moveWeight;
+        tileData = newTileData;
+        image.sprite = CharacterData.ConstructImage(tileData.GetImage());
+        moveWeight = tileData.GetMoveWeight();
         xPos = initXPos;
         yPos = initYPos;
-
+    }
+    public TileData GetTileData()
+    {
+        return tileData;
     }
 
     public void ClearUnit(bool selected)
@@ -90,7 +95,7 @@ public class Tile : MonoBehaviour
         occupied = true;
         currUnit = newUnit;
         currUnit.currTile = this;
-        currUnit.transform.position = transform.position + new Vector3(0, 0, -1);
+        currUnit.transform.position = transform.position + new Vector3(0, 0, Z_OFFSET);
     }
 
     public void HighlightTiles(int targetingMode, int range = -1, bool walking = true)
@@ -119,10 +124,10 @@ public class Tile : MonoBehaviour
     }
     void HighlightTile(int targetingMode)
     {
-        if (image.sprite == tileImages[0])
-            image.sprite = tileImages[targetingMode];
-        else if (image.sprite == tileImages[targetingMode])
-            image.sprite = tileImages[0];
+        if (tintImage.color == tints[0])
+            tintImage.color = tints[targetingMode];
+        else if (tintImage.color == tints[targetingMode])
+            tintImage.color = tints[0];
     }
 
     // Used to find places for character to move
@@ -147,15 +152,15 @@ public class Tile : MonoBehaviour
         tiles.Add(this);
         return tiles;
     }
-    Dictionary<Tile, int> currDistances;
+    Dictionary<Tile, float> currDistances;
     HashSet<Tile> FindTilesInRange(Tile sourceTile, int range)
     {
         Tile currTile;
         Tile peekTile;
-        int currRange;
-        currDistances = new Dictionary<Tile, int>();
+        float currRange;
+        currDistances = new Dictionary<Tile, float>();
         Queue<Tile> tilesToTrack = new Queue<Tile>();
-        Queue<int> tilesToTrackDistances = new Queue<int>();
+        Queue<float> tilesToTrackDistances = new Queue<float>();
         tilesToTrack.Enqueue(sourceTile);
         tilesToTrackDistances.Enqueue(range);
 
@@ -189,7 +194,7 @@ public class Tile : MonoBehaviour
 
         HashSet<Tile> tilesToHighlight = new HashSet<Tile>();
         // Log all tiles reached
-        foreach (KeyValuePair<Tile, int> pair in currDistances)
+        foreach (KeyValuePair<Tile, float> pair in currDistances)
         {
             tilesToHighlight.Add(pair.Key);
         }
@@ -197,11 +202,11 @@ public class Tile : MonoBehaviour
         tilesToHighlight.Add(this);
         return tilesToHighlight;
     }
-    public void TrackTile(Tile peekTile, Queue<Tile> tilesToTrack, Queue<int> distances, int currRange)
+    public void TrackTile(Tile peekTile, Queue<Tile> tilesToTrack, Queue<float> distances, float currRange)
     {
         // Check if tile is reachable and not logged
-        // TODO: decide whether excess range can reach one additional tile, or if range is needed for every tile
-        if (!currDistances.ContainsKey(peekTile) && currRange > 0)// - peekTile.moveWeight >= 0)
+        // Tile is reachable if in range or range is greater or equal to 1
+        if (!currDistances.ContainsKey(peekTile) && (currRange - peekTile.moveWeight >= 0 || currRange >= 1))
         {
             tilesToTrack.Enqueue(peekTile);
             distances.Enqueue(currRange - peekTile.moveWeight);

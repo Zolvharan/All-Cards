@@ -34,7 +34,7 @@ public class Enemy : CharacterStats
         return banner;
     }
 
-    override protected void Die()
+    override public void Die()
     {
         dead = true;
         currTile.ClearUnit(false);
@@ -75,8 +75,29 @@ public class Enemy : CharacterStats
             }
         }
         if (currDistance <= currStats["attackRange"])
-            closestPlayer.TakeDamage(currStats["strength"]);
+            Attack(closestPlayer, enemyControl.GetActionDisplay());
         currTile.ClearUnit(false);
         closestTile.PlaceUnit(this);
     }
+
+    // if has ability and has energy
+        // if can heal && ally in danger
+            // heal
+        // if can support && ally debuffed
+            // support
+        // if can debuff && enemy buffed
+            // debuff
+        // if target in range
+            // if energy full
+                // RANDOM ATTACK
+            // if energy not full
+                // RANDOM ATTACK INCLUDING ATTACK
+        // if has energy
+            // support
+        // if can regenerate energy
+            // regenerate
+    // if target in range
+        // Attack()
+    // if can regenerate energy
+        // regenerate
 }
