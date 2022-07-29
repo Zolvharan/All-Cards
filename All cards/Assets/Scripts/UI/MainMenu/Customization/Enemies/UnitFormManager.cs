@@ -45,6 +45,7 @@ public class UnitFormManager : MonoBehaviour
     bool isInFaction;
     // Can only load and apply if in faction
     public GameObject factionComponents;
+    readonly int[] ENEMY_LEVEL_CAPACITIES = { 10, 20, 40 };
 
     public void OpenCreationForm(bool isEditing)
     {
@@ -95,7 +96,8 @@ public class UnitFormManager : MonoBehaviour
             portrait.sprite = CharacterData.ConstructImage(portraitData);
             battleSprite.sprite = CharacterData.ConstructImage(battleSpriteData);
 
-            maxCapacity = (currUnit.GetEnemyLevel() + 1) * 10;
+            maxCapacity = ENEMY_LEVEL_CAPACITIES[currUnit.GetEnemyLevel() - 1];
+            enemyTypes.value = currUnit.GetEnemyLevel() - 1;
         }
         else
         {
@@ -106,7 +108,7 @@ public class UnitFormManager : MonoBehaviour
             flyingToggle.isOn = false;
             currAbilities = new List<AbilityData>();
             RefreshAbilities();
-            maxCapacity = 10;
+            maxCapacity = ENEMY_LEVEL_CAPACITIES[0];
             enemyTypes.value = 0;
 
             // Init images
@@ -318,7 +320,7 @@ public class UnitFormManager : MonoBehaviour
     }
     public void UpdateEnemyType()
     {
-        maxCapacity = (enemyTypes.value + 1) * 10;
+        maxCapacity = ENEMY_LEVEL_CAPACITIES[enemyTypes.value];
         capacityText.text = currCapacity.ToString() + '/' + maxCapacity;
     }
 

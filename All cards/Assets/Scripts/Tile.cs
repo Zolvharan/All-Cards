@@ -135,6 +135,7 @@ public class Tile : MonoBehaviour
     {
         return flying ? CollectTiles(range) : FindTilesInRange(sourceTile, range);
     }
+    // For when move weight is irrelevant
     public HashSet<Tile> CollectTiles(int range)
     {
         HashSet<Tile> tiles = new HashSet<Tile>();

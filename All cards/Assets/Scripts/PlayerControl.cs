@@ -290,6 +290,10 @@ public class PlayerControl : MonoBehaviour
         abilityMenuOpen = !abilityMenuOpen;
     }
 
+    public bool IsPlayerTurn()
+    {
+        return playerTurn;
+    }
     public void EndTurn()
     {
         if (attacking)
@@ -346,6 +350,8 @@ public class PlayerControl : MonoBehaviour
         else if (attacking)
         {
             currTile.currUnit.Attack(currUnit, actionDisplay);
+            // Activate display
+            StartCoroutine(actionDisplay.StartAttackDisplay());
             attacking = false;
             currTile.HighlightTiles(2);
             currTile.SelectTile(false);
@@ -363,6 +369,8 @@ public class PlayerControl : MonoBehaviour
             OpenAbilityMenu(usingItems);
             currTile.SelectTile();
             currTile.currUnit.UseAbility(abilityIndex, targetedTiles, usingItems, actionDisplay);
+            // Activate display
+            StartCoroutine(actionDisplay.StartAttackDisplay());
             currTile = null;
             UI.HideForecast();
         }

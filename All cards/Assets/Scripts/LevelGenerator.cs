@@ -7,6 +7,8 @@ public class LevelGenerator : MonoBehaviour
 {
     public PlayerControl playerControl;
     public EnemyControl enemyControl;
+    public UnitPlacementUI unitPlacement;
+    public BUIManager battleUI; 
 
     public Tile[][] tiles;
     public int length;
@@ -30,14 +32,14 @@ public class LevelGenerator : MonoBehaviour
     public void GenerateMapLevel(List<CharacterStats> newCharacters, List<Enemy> newEnemies, MapEditorData tileset)
     {
         GenerateMapTileset(tileset);
-        GenerateLevel(newCharacters, newEnemies);
+        SetUnits(newCharacters, newEnemies);
     }
     public void GenerateExteriorLevel(List<CharacterStats> newCharacters, List<Enemy> newEnemies, ExteriorTilesetData tileset)
     {
         GenerateExteriorTileset(tileset);
-        GenerateLevel(newCharacters, newEnemies);
+        SetUnits(newCharacters, newEnemies);
     }
-    void GenerateLevel(List<CharacterStats> newCharacters, List<Enemy> newEnemies)
+    void SetUnits(List<CharacterStats> newCharacters, List<Enemy> newEnemies)
     {
         characters = newCharacters;
         enemies = newEnemies;
@@ -46,16 +48,23 @@ public class LevelGenerator : MonoBehaviour
         for (int i = 0; i < characters.Count; i++)
         {
             characters[i].playerControl = playerControl;
-            tiles[0][i].PlaceUnit(characters[i]);
+            //tiles[0][i].PlaceUnit(characters[i]);
         }
         playerControl.units = characters;
 
         // TODO: temp code, enemies should probably have more specific starting positions
         for (int i = 0; i < enemies.Count; i++)
         {
-            tiles[tiles.Length - 1][tiles[i].Length - i - 1].PlaceUnit(enemies[i]);
+            //tiles[tiles.Length - 1][tiles[i].Length - i - 1].PlaceUnit(enemies[i]);
         }
         enemyControl.SetEnemies(enemies);
+
+        unitPlacement.PlaceUnits(newCharacters, newEnemies);
+    }
+    public void Finish()
+    {
+        battleUI.gameObject.SetActive(true);
+        playerControl.StartTurn();
     }
 
     public void DestroyLevel()

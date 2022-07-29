@@ -22,7 +22,7 @@ public class ActionDisplay : MonoBehaviour
     const float CLOSING_DELAY = 2;
     const float CHARACTER_SWITCH_DELAY = 2;
 
-    Coroutine displayCoroutine;
+    IEnumerator displayCoroutine;
 
     static HashSet<CharacterStats> deadUnits;
 
@@ -31,20 +31,27 @@ public class ActionDisplay : MonoBehaviour
         deadUnits = new HashSet<CharacterStats>();
     }
 
-    public void AttackDisplay(CharacterStats effectedUnit, int damage, bool isCrit)
+    public IEnumerator StartAttackDisplay()
+    {
+        this.gameObject.SetActive(true);
+        yield return StartCoroutine(displayCoroutine);
+    }
+
+    public void SetAttackDisplay(CharacterStats effectedUnit, int damage, bool isCrit)
+    {
+        mainCamera.transform.position = new Vector3(effectedUnit.gameObject.transform.position.x, effectedUnit.gameObject.transform.position.y, transform.position.z);
+        actionName.text = "Attack";
+        InitCharacterDisplay(effectedUnit, effectedUnit.GetStats(), effectedUnit.GetDurations());
+
+        displayCoroutine = DisplayAttack(damage, (float)effectedUnit.GetMaxHealth(), (float)effectedUnit.GetHealth(), isCrit);
+    }
+    public IEnumerator DisplayAttack(int damage, float maxHealth, float currHealth, bool isCrit)
     {
         // Disable playerControl while display is going
         playerControl.enabled = false;
         mainDisplay.SetActive(true);
         menu.SetActive(false);
-        mainCamera.transform.position = new Vector3(effectedUnit.gameObject.transform.position.x, effectedUnit.gameObject.transform.position.y, transform.position.z);
-        actionName.text = "Attack";
-        InitCharacterDisplay(effectedUnit, effectedUnit.GetStats(), effectedUnit.GetDurations());
 
-        displayCoroutine = StartCoroutine(DisplayAttack(damage, (float)effectedUnit.GetMaxHealth(), (float)effectedUnit.GetHealth(), isCrit));
-    }
-    IEnumerator DisplayAttack(int damage, float maxHealth, float currHealth, bool isCrit)
-    {
         yield return new WaitForSeconds(OPENING_DELAY);
         // Miss
         if (damage == -1)
@@ -83,19 +90,20 @@ public class ActionDisplay : MonoBehaviour
         ExitDisplay();
     }
 
-    public void AbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
+    public void SetAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
+    {
+        actionName.text = abilityName;
+
+        displayCoroutine = DisplayAbility(effectedUnits, preStats, preDurations, potencies, durations, isCrits, castingUnit, costPotencies, costDurations, abilityName);
+    }
+    public IEnumerator DisplayAbility(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
     {
         // Disable playerControl while display is going
         playerControl.enabled = false;
         mainDisplay.SetActive(true);
         menu.SetActive(false);
-        actionName.text = abilityName;
 
-        displayCoroutine = StartCoroutine(DisplayAbility(effectedUnits, preStats, preDurations, potencies, durations, isCrits, castingUnit, costPotencies, costDurations, abilityName));
-    }
-    IEnumerator DisplayAbility(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
-    {
-        int currStatValue;
+        float currStatValue;
         int j;
         int k;
 
@@ -189,7 +197,8 @@ public class ActionDisplay : MonoBehaviour
     void InitCharacterDisplay(CharacterStats effectedUnit, int[] stats, int[] durations)
     {
         characterSprite.sprite = effectedUnit.portrait;
-        statBars[0].transform.localScale = new Vector3((stats[0] / effectedUnit.GetMaxHealth() <= 1 ? (float)stats[0] / (float)effectedUnit.GetMaxHealth() : 1), statBars[0].transform.localScale.y, statBars[0].transform.localScale.x);
+
+        statBars[0].transform.localScale = new Vector3(((float)stats[0] / effectedUnit.GetMaxHealth() <= 1 ? (float)stats[0] / (float)effectedUnit.GetMaxHealth() : 1), statBars[0].transform.localScale.y, statBars[0].transform.localScale.x);
         statBars[1].transform.localScale = new Vector3(((float)stats[0] / (float)effectedUnit.GetMaxHealth() > 1 ? (stats[0] - (float)effectedUnit.GetMaxHealth()) / (float)effectedUnit.GetMaxHealth() : 0),
             statBars[1].transform.localScale.y, statBars[1].transform.localScale.x);
         statBars[2].transform.localScale = new Vector3((effectedUnit.GetEnergy() / effectedUnit.GetMaxEnergy()), statBars[2].transform.localScale.y, statBars[2].transform.localScale.x);
@@ -215,10 +224,13 @@ public class ActionDisplay : MonoBehaviour
         {
             text.gameObject.SetActive(false);
         }
-        playerControl.enabled = true;
+        // Restore control, if players turn
+        if (playerControl.IsPlayerTurn())
+            playerControl.enabled = true;
         mainDisplay.SetActive(false);
         menu.SetActive(true);
         // If animation is canceled
+        // TODO: currently broken
         if (displayCoroutine != null)
             displayCoroutine = null;
     }

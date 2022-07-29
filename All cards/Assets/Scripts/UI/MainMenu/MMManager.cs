@@ -5,7 +5,7 @@ using UnityEngine;
 // Generally manages the main menu
 public class MMManager : MonoBehaviour
 {
-    public GameObject BattleUI;
+    //public GameObject BattleUI;
 
     public GameObject frontPage;
     public BattleSetupUI customBattle;
@@ -27,13 +27,6 @@ public class MMManager : MonoBehaviour
         customBattle.gameObject.SetActive(true);
         customBattle.InitDisplay();
         frontPage.SetActive(false);
-    }
-    // Resets menu, opens battleUI and hides
-    public void StartCombat()
-    {
-        customBattle.gameObject.SetActive(false);
-        frontPage.SetActive(false);
-        BattleUI.SetActive(true);
     }
 
     public void OpenCharacters()

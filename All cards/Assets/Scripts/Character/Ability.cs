@@ -37,6 +37,8 @@ public class Ability
     // Pushes units. First 2 ints are push x and push y, second 2 are cost (self) push x and push y
     public int[] pushInts;
 
+    const float CRIT_MULTIPLIER = 1.5f;
+
     public Ability(string newName, bool isDirected, bool isBiased, bool isAlly, int[] newPotencies, int[] newDurations, int[] newCostPotencies, int[] newCostDurations, int[] newGlobals, int[] newPushInts, bool isPlayer)
     {
         abilityName = newName;
@@ -136,7 +138,7 @@ public class Ability
                         effectivePotencies[effectivePotencies.Count - 1][i] = effectedUnits[effectedUnits.Count - 1].GetEffectedPotency(target, (int)Math.Floor(potencies[target] * reverseEffect * (currHit >= 2 ? 1.5f : 1)));
                         isCrits[isCrits.Count - 1][i] = currHit >= 2;
                         // Ignore uneffected stats (checks for tile variable in case character died)
-                        tile.currUnit.AddStatEffect(target, durations[target], (int)Math.Floor(potencies[target] * reverseEffect * (currHit >= 2 ? 1.5f : 1)));    // Ternary tests crit
+                        tile.currUnit.AddStatEffect(target, durations[target], (int)Math.Floor(potencies[target] * reverseEffect * (currHit >= 2 ? CRIT_MULTIPLIER : 1)));    // Ternary tests crit
                     }
                     else if (potencies[target] != 0)
                     {
@@ -187,7 +189,7 @@ public class Ability
             reCostDurations[i] = costDurations[CharacterStats.statTargets[i]];
         }
 
-        actionDisplay.AbilityDisplay(effectedUnits, preStats, preDurations, effectivePotencies, reDurations, isCrits, caster, reCostPotencies, reCostDurations, abilityName);
+        actionDisplay.SetAbilityDisplay(effectedUnits, preStats, preDurations, effectivePotencies, reDurations, isCrits, caster, reCostPotencies, reCostDurations, abilityName);
     }
 
     public Dictionary<string, int> GetPotencies()
@@ -213,5 +215,45 @@ public class Ability
     public bool IsBiased()
     {
         return biased;
+    }
+
+    // Enemy AI functions
+    public int GetEnergyCost()
+    {
+        return costPotencies["energy"];
+    }
+    public bool IsHeal()
+    {
+        return potencies["health"] < 0 || (biased && potencies["health"] != 0);
+    }
+    public bool IsSupport()
+    {
+        bool isSupport = false;
+        foreach (KeyValuePair<string, int> pair in potencies)
+        {
+            if ((pair.Value > 0 || (biased && pair.Value != 0)) && pair.Key != "health")
+            {
+                isSupport = true;
+                break;
+            }
+        }
+        return isSupport;
+    }
+    public bool IsAttack()
+    {
+        bool isAttack = false;
+        foreach (KeyValuePair<string, int> pair in potencies)
+        {
+            if (pair.Value > 0)
+            {
+                isAttack = true;
+                break;
+            }
+        }
+        return isAttack;
+    }
+    public bool IsEnergyRegen()
+    {
+        return costPotencies["energy"] < 0;
     }
 }

@@ -126,7 +126,7 @@ public class CharacterStats : MonoBehaviour
         else if (hit < 1)
             damage = -1;
 
-        actionDisplay.AttackDisplay(unit, unit.AdjustDamage(damage), hit >= 2);
+        actionDisplay.SetAttackDisplay(unit, unit.AdjustDamage(damage), hit >= 2);
         unit.TakeDamage(damage);
 
         attacked = true;

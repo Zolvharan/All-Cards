@@ -31,10 +31,12 @@ public class BattleSetupUI : MonoBehaviour
     bool isSelectingEnemy;
 
     public LevelGenerator generator;
-    public PlayerControl player;
+
+    public Text alertText;
 
     public void InitDisplay()
     {
+        alertText.text = "";
         selectCharText.text = "Select";
         selectEnemyText.text = "Select";
         isSelectingCharacter = false;
@@ -82,50 +84,73 @@ public class BattleSetupUI : MonoBehaviour
 
     public void StartCombat()
     {
-        // Close menu
-        mainManager.StartCombat();
-
-        // Construct set of new character and enemy objects
-        List<CharacterStats> newCharacters = new List<CharacterStats>();
-        List<Enemy> newEnemies = new List<Enemy>();
-
-        // Create characters
-        for (int i = 0; i < MAX_CHARACTERS; i++)
+        // Needs at least one player character and one enemy
+        bool characterReady = false;
+        bool enemyReady = false;
+        foreach (int index in charIndexes)
         {
-            // If not empty
-            if (charIndexes[i] != -1)
+            if (index != -1)
             {
-                // Create object, initialize character stats and add to list
-                Transform newCharacter = Instantiate(baseCharPrefab);
-                SaveData.GetCharacters()[charIndexes[i]].ConstructCharacter(newCharacter.GetComponent<CharacterStats>(), currItemsArray[i], true);
-                newCharacters.Add(newCharacter.GetComponent<CharacterStats>());
+                characterReady = true;
+                break;
             }
         }
-
-        UnitData[] currUnits = SaveData.GetFactions()[factionList.value].GetUnits();
-        // Create enemies
-        for (int i = 0; i < MAX_ENEMIES; i++)
+        foreach (int index in enemyIndexes)
         {
-            // If not empty
-            if (enemyIndexes[i] != -1)
+            if (index != -1)
             {
-                // Create object, initialize character stats and add to list
-                Transform newEnemy = Instantiate(baseEnemyPrefab);
-                currUnits[enemyIndexes[i]].ConstructUnit(newEnemy.GetComponent<Enemy>(), false);
-                newEnemies.Add(newEnemy.GetComponent<Enemy>());
+                enemyReady = true;
+                break;
             }
         }
-
-        switch (tileTypeList.value)
+        if (!characterReady)
+            alertText.text = "NO PLAYERS";
+        else if (!enemyReady)
+            alertText.text = "NO ENEMIES";
+        else
         {
-            case 0:
-                generator.GenerateExteriorLevel(newCharacters, newEnemies, GetExteriorTileset());
-                break;
-            case 1:
-                generator.GenerateMapLevel(newCharacters, newEnemies, GetMapTileset());
-                break;
+            // Construct set of new character and enemy objects
+            List<CharacterStats> newCharacters = new List<CharacterStats>();
+            List<Enemy> newEnemies = new List<Enemy>();
+
+            // Create characters
+            for (int i = 0; i < MAX_CHARACTERS; i++)
+            {
+                // If not empty
+                if (charIndexes[i] != -1)
+                {
+                    // Create object, initialize character stats and add to list
+                    Transform newCharacter = Instantiate(baseCharPrefab);
+                    SaveData.GetCharacters()[charIndexes[i]].ConstructCharacter(newCharacter.GetComponent<CharacterStats>(), currItemsArray[i], true);
+                    newCharacters.Add(newCharacter.GetComponent<CharacterStats>());
+                }
+            }
+
+            UnitData[] currUnits = SaveData.GetFactions()[factionList.value].GetUnits();
+            // Create enemies
+            for (int i = 0; i < MAX_ENEMIES; i++)
+            {
+                // If not empty
+                if (enemyIndexes[i] != -1)
+                {
+                    // Create object, initialize character stats and add to list
+                    Transform newEnemy = Instantiate(baseEnemyPrefab);
+                    currUnits[enemyIndexes[i]].ConstructUnit(newEnemy.GetComponent<Enemy>(), false);
+                    newEnemies.Add(newEnemy.GetComponent<Enemy>());
+                }
+            }
+
+            switch (tileTypeList.value)
+            {
+                case 0:
+                    generator.GenerateExteriorLevel(newCharacters, newEnemies, GetExteriorTileset());
+                    break;
+                case 1:
+                    generator.GenerateMapLevel(newCharacters, newEnemies, GetMapTileset());
+                    break;
+            }
+            this.gameObject.SetActive(false);
         }
-        player.StartTurn();
     }
     public ExteriorTilesetData GetExteriorTileset()
     {
