@@ -100,10 +100,11 @@ public class Enemy : CharacterStats
                 // if target in range
                 else if (TargetInMoveRange(true, attackOptions))
                 {
-                    selectedAttack = attackOptions[random.Next(0, attackOptions.Count)];
+                    selectedAttack = null;
                     // if energy not full and standard attack in range, use standard attack if RNG says so, otherwise use ability
-                    if (currStats["energy"] != baseStats["energy"] && TargetInMoveRange() && random.Next(0, attackOptions.Count + 1) == attackOptions.Count)
-                        selectedAttack = null;
+                    // Unless there are no attack options
+                    if (attackOptions.Count != 0 || !(currStats["energy"] != baseStats["energy"] && TargetInMoveRange() && random.Next(0, attackOptions.Count + 1) == attackOptions.Count))
+                        selectedAttack = attackOptions[random.Next(0, attackOptions.Count)];
 
                     List<Ability> singleItem;
                     if (selectedAttack != null)
@@ -252,7 +253,7 @@ public class Enemy : CharacterStats
         HashSet<Tile> tileSet = currTile.GetTiles(currTile, GetMoveSpeed(), flying);
         foreach (Tile tile in tileSet)
         {
-            if (TargetInRange(targetPlayer, potentialAbilities, tile))
+            if (!tile.occupied && TargetInRange(targetPlayer, potentialAbilities, tile))
                 return true;
         }
         return false;

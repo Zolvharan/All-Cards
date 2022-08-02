@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using System.IO;
 
 // Character images manager
-public class CIManager : MonoBehaviour
+public class CharacterImageForm : MonoBehaviour
 {
     public RectTransform viewportContent;
     public Image currImage;
@@ -24,8 +24,11 @@ public class CIManager : MonoBehaviour
     // Distance from view border
     const int MARGIN = 5;
 
-    public void InitDisplay(string filePath)
+    CreationForm currForm;
+
+    public void InitDisplay(string filePath, CreationForm newForm)
     {
+        currForm = newForm;
         GameObject newButton;
         Texture2D texture;
         Sprite newSprite;
@@ -58,11 +61,16 @@ public class CIManager : MonoBehaviour
         }
         // In case folder is empty, set image and data to the empty
         currData = GetTheEmpty();
-        currImage.sprite = CharacterData.ConstructImage(currData);
+        currImage.sprite = CharacterImageForm.ConstructImage(currData);
         // Set viewport size
         viewportContent.sizeDelta = new Vector2(viewportContent.sizeDelta.x, imageCount / 2 * (V_OFFSET + MARGIN) + MARGIN);
         if (viewportContent.sizeDelta.y < 200)
             viewportContent.sizeDelta = new Vector2(viewportContent.sizeDelta.x, 200);
+    }
+    public void SetImage(bool saveChanges)
+    {
+        currForm.SetImage(saveChanges, currImage.sprite, currData);
+        ExitImages();
     }
 
     public void SetCurrImage(Button imageSetter)
@@ -71,18 +79,23 @@ public class CIManager : MonoBehaviour
         currData = new byte[imageData[buttons.IndexOf(imageSetter.gameObject)].Length];
         imageData[buttons.IndexOf(imageSetter.gameObject)].CopyTo(currData, 0);
     }
-    public Sprite GetCurrImage()
-    {
-        return currImage.sprite;
-    }
-    public byte[] GetCurrData()
-    {
-        return currData;
-    }
 
     public static byte[] GetTheEmpty()
     {
         return File.ReadAllBytes(".\\SavedData\\TheEmpty.png");
+    }
+    // Construct sprite out of file data
+    static public Sprite ConstructImage(byte[] data)
+    {
+        Sprite newSprite;
+        Texture2D texture = new Texture2D(50, 50);
+        if (texture.LoadImage(data))
+        {
+            newSprite = Sprite.Create(texture, new Rect(0, 0, 50, 50), new Vector2(0.5f, 0.5f), 50);
+            return newSprite;
+        }
+        else
+            return null;
     }
 
     // Returns to charForm

@@ -45,9 +45,9 @@ public class UnitData
         baseStats["defense"] = stats[6];
         baseStats["resistance"] = stats[7];
 
-        Sprite newPortrait = CharacterData.ConstructImage(portrait);
-        Sprite newBattleSprite = CharacterData.ConstructImage(battleSprite);
-        Sprite newBanner = CharacterData.ConstructImage(banner);
+        Sprite newPortrait = CharacterImageForm.ConstructImage(portrait);
+        Sprite newBattleSprite = CharacterImageForm.ConstructImage(battleSprite);
+        Sprite newBanner = CharacterImageForm.ConstructImage(banner);
         // TODO: init abilities
         Ability[] newAbilities = new Ability[abilities.Length];
         for (int i = 0; i < abilities.Length; i++)

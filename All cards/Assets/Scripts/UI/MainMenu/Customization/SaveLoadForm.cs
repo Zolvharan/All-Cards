@@ -20,7 +20,7 @@ public class SaveLoadForm : MonoBehaviour
     // Inits display elements
     public void InitDisplay(CreationForm newForm, List<string> saveDataNames, bool isLoading, int isEditingSaveIndex = -1)
     {
-        newForm = currForm;
+        currForm = newForm;
         confirmText.text = "";
 
         // Enter loading mode
@@ -66,6 +66,21 @@ public class SaveLoadForm : MonoBehaviour
         confirmText.text = saveDataList.value == 0 ? "Save new data?" : "Overwrite " + saveDataList.captionText.text + "?";
         saveButton.SetActive(false);
         confirmButton.SetActive(true);
+    }
+    public void SaveData()
+    {
+        currForm.SaveItem();
+        this.gameObject.SetActive(false);
+    }
+    public void LoadData()
+    {
+        currForm.LoadItem();
+        this.gameObject.SetActive(false);
+    }
+    public void CancelSave()
+    {
+        currForm.gameObject.SetActive(true);
+        this.gameObject.SetActive(false);
     }
 
     public int GetLoadValue()

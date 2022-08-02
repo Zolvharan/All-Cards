@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.IO;
 
-public class TileFormManager : MonoBehaviour
+public class TileFormManager : CreationForm
 {
     public TilesetsMainManager tilesetsMainManager;
-    public CIManager imageSelectionManager;
+    public CharacterImageForm imageSelectionManager;
     public SaveTileManager saveTileManager;
 
     public TilesetFormManager tilesetFormManager;
@@ -57,7 +57,7 @@ public class TileFormManager : MonoBehaviour
             moveWeightText.text = (moveWeightSlider.value / DEFAULT_WEIGHT).ToString();
             impassable.isOn = currTile.GetImpassable();
             tileData = currTile.GetImage();
-            tileImage.sprite = CharacterData.ConstructImage(tileData);
+            tileImage.sprite = CharacterImageForm.ConstructImage(tileData);
         }
         else
         {
@@ -67,7 +67,7 @@ public class TileFormManager : MonoBehaviour
             nameField.text = "";
             // Init image
             tileData = GetPlaceholderImage();
-            tileImage.sprite = CharacterData.ConstructImage(tileData);
+            tileImage.sprite = CharacterImageForm.ConstructImage(tileData);
         }
     }
 
@@ -94,19 +94,16 @@ public class TileFormManager : MonoBehaviour
     public void OpenImages()
     {
         imageSelectionManager.gameObject.SetActive(true);
-        imageSelectionManager.InitDisplay(TILE_PATH);
+        imageSelectionManager.InitDisplay(TILE_PATH, this);
         this.gameObject.SetActive(false);
     }
-    public void SetImage(bool saveChanges)
+    public override void SetImage(bool saveChanges, Sprite newSprite, byte[] newData)
     {
         this.gameObject.SetActive(true);
-        Sprite newImage = imageSelectionManager.GetCurrImage();
-        byte[] newData = imageSelectionManager.GetCurrData();
-        imageSelectionManager.ExitImages();
 
         if (saveChanges)
         {
-            tileImage.sprite = newImage;
+            tileImage.sprite = newSprite;
             tileData = newData;
         }
     }

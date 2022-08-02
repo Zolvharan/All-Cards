@@ -7,10 +7,8 @@ public class EnemyGenManager : MonoBehaviour
 {
     public FactionFormManager factionformManager;
     public UnitFormManager unitFormManager;
-    public UnitAbilityManager unitAbilityManager;
+    public AbilityForm abilityForm;
     public SaveFactionManager factionSaves;
-    public SaveUnitManager unitSaves;
-    public SaveEnemyAbilityMgr abilitySaves;
 
     public Dropdown[] lists;
 
@@ -18,6 +16,10 @@ public class EnemyGenManager : MonoBehaviour
     public GameObject deleteButton;
     int listDeleteIndex;
 
+    void OnEnable()
+    {
+        InitDisplay();
+    }
     public void OpenEnemies()
     {
         this.gameObject.SetActive(true);
@@ -26,8 +28,6 @@ public class EnemyGenManager : MonoBehaviour
     // Inits display elements
     public void InitDisplay()
     {
-        factionformManager.gameObject.SetActive(false);
-
         listDeleteIndex = -1;
         deletePrompt.text = "";
         deleteButton.SetActive(false);
@@ -138,13 +138,23 @@ public class EnemyGenManager : MonoBehaviour
     }
     public void OpenAbilityForm(bool isEditing)
     {
-        unitAbilityManager.gameObject.SetActive(true);
-        unitAbilityManager.OpenAbilityForm(isEditing);
-        this.gameObject.SetActive(false);
+        if (!isEditing || lists[1].options.Count != 0)
+        {
+            abilityForm.OpenAbilityForm(isEditing, lists[1], SaveData.GetAbilities()[lists[1].value], this.gameObject, false);
+            this.gameObject.SetActive(false);
+        }
+    }
+    public void OpenAbilityFormInCharacter(bool isEditing)
+    {
+        if (!isEditing || unitFormManager.GetAbility() != null)
+        {
+            abilityForm.OpenAbilityForm(isEditing, lists[1], unitFormManager.GetAbility(), this.gameObject, true, unitFormManager, unitFormManager.GetAbilityStats());
+            unitFormManager.gameObject.SetActive(false);
+        }
     }
     public void DisplayAbilityForm()
     {
-        unitAbilityManager.gameObject.SetActive(true);
+        abilityForm.gameObject.SetActive(true);
         this.gameObject.SetActive(false);
     }
     public void OpenSavedFactionData(FactionData data, int isEditingSaveIndex = -1)
@@ -152,19 +162,5 @@ public class EnemyGenManager : MonoBehaviour
         factionformManager.gameObject.SetActive(false);
         factionSaves.gameObject.SetActive(true);
         factionSaves.InitDisplay(data, isEditingSaveIndex);
-    }
-    public void OpenSavedUnitData(UnitData data, bool isInFaction, int isEditingSaveIndex = -1)
-    {
-        unitFormManager.gameObject.SetActive(false);
-        this.gameObject.SetActive(false);
-        unitSaves.gameObject.SetActive(true);
-        unitSaves.InitDisplay(data, isInFaction, isEditingSaveIndex);
-    }
-    public void OpenSavedAbilityData(AbilityData data, bool isInUnit, int isEditingSaveIndex = -1)
-    {
-        unitAbilityManager.gameObject.SetActive(false);
-        this.gameObject.SetActive(false);
-        abilitySaves.gameObject.SetActive(true);
-        abilitySaves.InitDisplay(data, isInUnit, isEditingSaveIndex);
     }
 }

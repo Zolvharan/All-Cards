@@ -72,7 +72,7 @@ public class Tile : MonoBehaviour
     public void ConstructTile(TileData newTileData, int initXPos, int initYPos)
     {
         tileData = newTileData;
-        image.sprite = CharacterData.ConstructImage(tileData.GetImage());
+        image.sprite = CharacterImageForm.ConstructImage(tileData.GetImage());
         moveWeight = tileData.GetMoveWeight();
         xPos = initXPos;
         yPos = initYPos;

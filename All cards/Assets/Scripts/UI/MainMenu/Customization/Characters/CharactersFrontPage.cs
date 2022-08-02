@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 // Character component manager
 // Used for Character selection
-public class CCManager : MonoBehaviour
+public class CharactersFrontPage : MonoBehaviour
 {
     // 0 : characters, 1 : abilities, 2 : items
     public Dropdown[] lists;
@@ -15,12 +15,15 @@ public class CCManager : MonoBehaviour
     int listDeleteIndex;
 
     // Manages other character forms as well
-    public MCManager charForm;
-    public SCManager characterSaves;
-    public GameObject abilityForm;
-    public SAManager abilitySaves;
-    public CIManager imageSelection;
-    public MIManager itemForm;
+    public CharacterForm charForm;
+    public AbilityForm abilityForm;
+    public CharacterImageForm imageSelection;
+    public ItemForm itemForm;
+
+    void OnEnable()
+    {
+        InitDisplay();
+    }
 
     public void OpenCharacters()
     {
@@ -28,13 +31,8 @@ public class CCManager : MonoBehaviour
         InitDisplay();
     }
     // Inits display elements
-    public void InitDisplay()
+    void InitDisplay()
     {
-        charForm.gameObject.SetActive(false);
-        //abilityForm.SetActive(false);
-        //abilitySaves.gameObject.SetActive(false);
-        itemForm.gameObject.SetActive(false);
-
         listDeleteIndex = -1;
         deletePrompt.text = "";
         deleteButton.SetActive(false);
@@ -114,35 +112,37 @@ public class CCManager : MonoBehaviour
     }
 
     // Other form managing methods
-    // Primary initialization is done in MCManager
+    public void OpenCharForm(bool isEditing)
+    {
+        charForm.OpenCreationForm(isEditing, lists[0]);
+        this.gameObject.SetActive(false);
+    }
+    // Primary initialization is done in CharacterForm
     public void DisplayCharForm()
     {
         charForm.gameObject.SetActive(true);
         charForm.RefreshAbilities();
         this.gameObject.SetActive(false);
-        abilityForm.SetActive(false);
-        //imageSelection.gameObject.SetActive(false);
-    }
-    public void DisplaySavedCharacterData(CharacterData data, int isEditingSaveIndex = -1)
-    {
-        charForm.gameObject.SetActive(false);
-        characterSaves.gameObject.SetActive(true);
-        characterSaves.InitDisplay(data, isEditingSaveIndex);
+        abilityForm.gameObject.SetActive(false);
     }
 
-    // Primary initialization is done in MAManager
-    public void DisplayAbilityForm()
+    // Primary initialization is done in AbilityForm
+    public void OpenAbilityForm(bool isEditing)
     {
-        abilityForm.SetActive(true);
-        charForm.gameObject.SetActive(false);
-        abilitySaves.gameObject.SetActive(false);
+        if (!isEditing || lists[1].options.Count != 0)
+        {
+            abilityForm.OpenAbilityForm(isEditing, lists[1], SaveData.GetAbilities()[lists[1].value], this.gameObject, false);
+            this.gameObject.SetActive(false);
+        }
     }
-    public void DisplaySavedAbilityData(AbilityData data, bool isInChar, int isEditingSaveIndex = -1)
+    // Used by charForm
+    public void OpenAbilityFormInCharacter(bool isEditing)
     {
-        abilityForm.SetActive(false);
-        this.gameObject.SetActive(false);
-        abilitySaves.gameObject.SetActive(true);
-        abilitySaves.InitDisplay(data, isInChar, isEditingSaveIndex);
+        if (!isEditing || charForm.GetAbility() != null)
+        {
+            abilityForm.OpenAbilityForm(isEditing, lists[1], charForm.GetAbility(), this.gameObject, true, charForm, charForm.GetAbilityStats());
+            charForm.gameObject.SetActive(false);
+        }
     }
 
     public void OpenItemForm()

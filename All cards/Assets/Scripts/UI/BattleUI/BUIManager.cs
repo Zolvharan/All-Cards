@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class BUIManager : MonoBehaviour
 {
-    public MMManager mainMenuManager;
+    public MainMenuManager mainMenuManager;
     public LevelGenerator level;
 
     public GameObject menu;

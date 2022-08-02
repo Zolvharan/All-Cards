@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // Item form manager
-public class MIManager : MonoBehaviour
+public class ItemForm : CreationForm
 {
-    public CCManager ccManager;
-    public SIManager saveForm;
+    public CharactersFrontPage ccManager;
+    public SaveLoadForm saveForm;
 
     public GameObject optionsForm;
     public Toggle ranged;
@@ -102,17 +102,33 @@ public class MIManager : MonoBehaviour
 
         ccManager.OpenItemForm();
     }
+    public void ReturnToFront()
+    {
+        ccManager.OpenCharacters();
+        this.gameObject.SetActive(false);
+    }
     public void OpenRandomOptions()
     {
         optionsForm.SetActive(!optionsForm.activeSelf);
     }
 
-    public void SaveItem()
+    public override void SaveItem()
     {
         ItemData newItem = new ItemData(nameField.text, directed.isOn, biasedAlly.isOn, biasedAlly.isOn, potencies, durations, costPotencies, costDurations, globalStats, pushInts, numUses);
+        SaveData.SaveItem(newItem, saveForm.GetSaveValue() == 0 ? -1 : saveForm.GetSaveValue() - 1);
+        ccManager.OpenCharacters();
+        this.gameObject.SetActive(false);
+    }
+    public void OpenSaveForm()
+    {
+        List<string> dataNames = new List<string>();
+        foreach (ItemData item in SaveData.GetItems())
+        {
+            dataNames.Add(item.GetName());
+        }
 
         saveForm.gameObject.SetActive(true);
-        saveForm.InitDisplay(newItem);
+        saveForm.InitDisplay(this, dataNames, false);
         this.gameObject.SetActive(false);
     }
 
@@ -124,6 +140,7 @@ public class MIManager : MonoBehaviour
         durations = new int[10];
         costPotencies = new int[10];
         costDurations = new int[10];
+        pushInts = new int[4];
 
         numUses = (int)magnitude.maxValue - (int)magnitude.value + 1;
         numUsesText.text = numUses.ToString() + (numUses != 1 ? " uses" : " use");
@@ -193,7 +210,7 @@ public class MIManager : MonoBehaviour
         }
 
         // First allocate global stats
-        int maxGlobal = ((int)((float)allocationPoints * 0.4f) < MAManager.MAX_STAT_NUMS[10]) ? (int)((float)allocationPoints * 0.4f) : MAManager.MAX_STAT_NUMS[10];
+        int maxGlobal = ((int)((float)allocationPoints * 0.4f) < AbilityForm.MAX_STAT_NUMS[10]) ? (int)((float)allocationPoints * 0.4f) : AbilityForm.MAX_STAT_NUMS[10];
         maxGlobal = maxGlobal < 2 ? 2 : maxGlobal;
         // If ranged, random points are allocated to it up to a max of 40% allocated points, otherwise range is 0 or 1
         globalStats[0] = ranged.isOn ? Random.Range(2, maxGlobal) : Random.Range(0, 2);
@@ -202,7 +219,7 @@ public class MIManager : MonoBehaviour
         globalStats[1] = precise.isOn ? Random.Range(2, maxGlobal) : 0;
         allocationPoints -= globalStats[1];
         // If not AOE, radius = 0. Else radius is random from 1 to max
-        globalStats[2] = AOE.isOn ? Random.Range(1, MAManager.MAX_STAT_NUMS[12]) : 0;
+        globalStats[2] = AOE.isOn ? Random.Range(1, AbilityForm.MAX_STAT_NUMS[12]) : 0;
 
         // Set costs
         float currCostPoints = allocationPoints / Random.Range(2, 4);
@@ -229,8 +246,8 @@ public class MIManager : MonoBehaviour
         for (int i = 0; i < potencies.Length; i++)
         {
             // Set effect to max if effect exceeds max
-            if (potencies[i] > MAManager.MAX_STAT_NUMS[i])
-                potencies[i] = MAManager.MAX_STAT_NUMS[i];
+            if (potencies[i] > AbilityForm.MAX_STAT_NUMS[i])
+                potencies[i] = AbilityForm.MAX_STAT_NUMS[i];
             // Reverse potencies if offensive
             if (offensive.isOn)
                 potencies[i] *= -1;
@@ -244,16 +261,21 @@ public class MIManager : MonoBehaviour
                 // 75% chance ignore duration
                 if (Random.Range(0, 4) == 3)
                 {
-                    durations[i] = Random.Range(1, MAManager.MAX_DURATION + 1);
-                    costDurations[i] = Random.Range(1, MAManager.MAX_DURATION + 1);
+                    durations[i] = Random.Range(1, AbilityForm.MAX_DURATION + 1);
+                    costDurations[i] = Random.Range(1, AbilityForm.MAX_DURATION + 1);
                 }
             }
             // Energy cannot effect duration
             else if (i != 9)
             {
-                durations[i] = Random.Range(1, MAManager.MAX_DURATION + 1);
-                costDurations[i] = Random.Range(1, MAManager.MAX_DURATION + 1);
+                durations[i] = Random.Range(1, AbilityForm.MAX_DURATION + 1);
+                costDurations[i] = Random.Range(1, AbilityForm.MAX_DURATION + 1);
             }
+        }
+        // TODO: Set pushInts
+        for (int i = 0; i < pushInts.Length; i++)
+        {
+            pushInts[i] = 0;
         }
 
         SetViewNums();
@@ -343,7 +365,7 @@ public class MIManager : MonoBehaviour
                 statTextNums[i].text = costDurations[i].ToString();
             }
         }
-        
+
         // Duration inaccessable when potency is 0
         for (int i = 0; i < potencies.Length; i++)
         {

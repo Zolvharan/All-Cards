@@ -4,43 +4,12 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // Manages the character creation and editing menus
-public class UnitFormManager : MonoBehaviour
+public class UnitFormManager : CharacterForm
 {
     public EnemyGenManager enemyGenManager;
     public FactionFormManager factionFormManager;
-    public CIManager imageSelectionManager;
 
-    public InputField nameField;
-    public Image portrait;
-    byte[] portraitData;
-    public Image battleSprite;
-    byte[] battleSpriteData;
-
-    int maxCapacity;
     public Dropdown enemyTypes;
-    int currCapacity;
-    public Text capacityText;
-    public Toggle flyingToggle;
-    const int FLYING_COST = 5;
-    const int ABILITY_CAPACITY_COST = 2;
-    public Text[] statTextNums;
-    int[] statNums;
-    // The highest and lowest numbers that stats can be
-    // order is: MoveSpeed, AttackRange, Strength, EnergyRegen, Precision, Dexterity, Defense, Resistance
-    readonly int[] MIN_STAT_NUMS = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    readonly int[] MAX_STAT_NUMS = { 10, 10, 10, 5, 10, 5, 5, 5 };
-    readonly int[] DEFAULT_STAT_NUMS = { 1, 1, 1, 1, 0, 0, 0, 0 };
-
-    public Dropdown abilityList;
-    public List<AbilityData> currAbilities;
-
-    bool isPortrait;
-    const string PORTRAIT_PATH = ".\\SavedData\\Portraits";
-    const string BATTLE_SPRITE_PATH = ".\\SavedData\\BattleSprites";
-
-    bool editing;
-    bool removingAbility;
-    public Text alertText;
 
     bool isInFaction;
     // Can only load and apply if in faction
@@ -93,8 +62,8 @@ public class UnitFormManager : MonoBehaviour
             // Set image data
             portraitData = currUnit.portrait;
             battleSpriteData = currUnit.battleSprite;
-            portrait.sprite = CharacterData.ConstructImage(portraitData);
-            battleSprite.sprite = CharacterData.ConstructImage(battleSpriteData);
+            portrait.sprite = CharacterImageForm.ConstructImage(portraitData);
+            battleSprite.sprite = CharacterImageForm.ConstructImage(battleSpriteData);
 
             maxCapacity = ENEMY_LEVEL_CAPACITIES[currUnit.GetEnemyLevel() - 1];
             enemyTypes.value = currUnit.GetEnemyLevel() - 1;
@@ -112,10 +81,10 @@ public class UnitFormManager : MonoBehaviour
             enemyTypes.value = 0;
 
             // Init images
-            portraitData = CIManager.GetTheEmpty();
-            portrait.sprite = CharacterData.ConstructImage(portraitData);
-            battleSpriteData = CIManager.GetTheEmpty();
-            battleSprite.sprite = CharacterData.ConstructImage(battleSpriteData);
+            portraitData = CharacterImageForm.GetTheEmpty();
+            portrait.sprite = CharacterImageForm.ConstructImage(portraitData);
+            battleSpriteData = CharacterImageForm.GetTheEmpty();
+            battleSprite.sprite = CharacterImageForm.ConstructImage(battleSpriteData);
         }
         // Initialize stat nums, and curr capacity
         currCapacity = 0;
@@ -154,10 +123,15 @@ public class UnitFormManager : MonoBehaviour
                     else
                         factionFormManager.currUnits.Add(BuildUnit());
                     factionFormManager.RefreshUnits();
+                    enemyGenManager.DisplayFactionForm();
+                    this.gameObject.SetActive(false);
                 }
             }
-            enemyGenManager.DisplayFactionForm();
-            this.gameObject.SetActive(false);
+            else
+            {
+                enemyGenManager.DisplayFactionForm();
+                this.gameObject.SetActive(false);
+            }
         }
         else
         {
@@ -177,7 +151,17 @@ public class UnitFormManager : MonoBehaviour
         this.gameObject.SetActive(false);
     }
 
-    public void SaveUnit()
+    public override void SaveItem()
+    {
+        SaveData.SaveUnit(BuildUnit(), saveLoadForm.GetSaveValue() == 0 ? -1 : saveLoadForm.GetSaveValue() - 1);
+        this.gameObject.SetActive(true);
+    }
+    public override void LoadItem()
+    {
+        ReOpenForm(SaveData.GetUnits()[saveLoadForm.GetLoadValue()]);
+        this.gameObject.SetActive(false);
+    }
+    public override void OpenSaveForm()
     {
         // Save is forbidden if curr capacity exceeds or is under capacity
         if (currCapacity != maxCapacity)
@@ -190,12 +174,19 @@ public class UnitFormManager : MonoBehaviour
         }
         else
         {
+            saveLoadForm.gameObject.SetActive(true);
+            List<string> names = new List<string>();
+            foreach (UnitData unit in SaveData.GetUnits())
+            {
+                names.Add(unit.GetName());
+            }
             // If editing from main unit list, init save location to ability being edited
-            enemyGenManager.OpenSavedUnitData(BuildUnit(), isInFaction, !isInFaction && editing ? enemyGenManager.lists[1].value : -1);
+            saveLoadForm.InitDisplay(this, names, false, !isInFaction && editing ? enemyGenManager.lists[1].value : -1);
+            this.gameObject.SetActive(false);
         }
     }
     // Takes form data and builds unit
-    public UnitData BuildUnit()
+    UnitData BuildUnit()
     {
         // Turn ability list into array
         AbilityData[] abilitiesToSave = new AbilityData[currAbilities.Count];
@@ -205,135 +196,21 @@ public class UnitFormManager : MonoBehaviour
         return newUnit;
     }
     // Opens unit saving form in load
-    public void LoadUnit()
+    public void OpenLoadForm()
     {
-        enemyGenManager.OpenSavedUnitData(null, isInFaction);
-    }
-
-    public void OpenImages(bool openPortrait)
-    {
-        isPortrait = openPortrait;
-        imageSelectionManager.gameObject.SetActive(true);
-        imageSelectionManager.InitDisplay(isPortrait ? PORTRAIT_PATH : BATTLE_SPRITE_PATH);
+        saveLoadForm.gameObject.SetActive(true);
+        List<string> names = new List<string>();
+        foreach (UnitData unit in SaveData.GetUnits())
+        {
+            names.Add(unit.GetName());
+        }
+        saveLoadForm.InitDisplay(this, names, true);
         this.gameObject.SetActive(false);
     }
-    // Sets portrait or battleSprite if saving, and closes image selection
-    public void SetImage(bool saveChanges)
-    {
-        this.gameObject.SetActive(true);
-        Sprite newImage = imageSelectionManager.GetCurrImage();
-        byte[] newData = imageSelectionManager.GetCurrData();
-        imageSelectionManager.ExitImages();
 
-        if (saveChanges)
-        {
-            if (isPortrait)
-            {
-                portrait.sprite = newImage;
-                portraitData = newData;
-            }
-            else
-            {
-                battleSprite.sprite = newImage;
-                battleSpriteData = newData;
-            }
-        }
-    }
-
-    // Refreshes ability list when form is opened
-    public void RefreshAbilities()
-    {
-        abilityList.ClearOptions();
-        List<string> currAbilityNames = new List<string>();
-        for (int i = 0; i < currAbilities.Count; i++)
-        {
-            currAbilityNames.Add(currAbilities[i].GetName());
-        }
-        abilityList.AddOptions(currAbilityNames);
-    }
-
-    public void RemoveAbility()
-    {
-        // Ignore if no abilities exist
-        if (currAbilities.Count > 0)
-        {
-            // User has to press button twice to remove
-            if (removingAbility == false)
-            {
-                removingAbility = true;
-                alertText.text = "Remove " + currAbilities[abilityList.value].GetName() + "?";
-            }
-            else
-            {
-                removingAbility = false;
-                alertText.text = "";
-
-                currAbilities.RemoveAt(abilityList.value);
-                List<string> currAbilityNames = new List<string>();
-                for (int i = 0; i < currAbilities.Count; i++)
-                {
-                    currAbilityNames.Add(currAbilities[i].GetName());
-                }
-                abilityList.ClearOptions();
-                abilityList.AddOptions(currAbilityNames);
-                AdjustCapacity(false);
-            }
-        }
-    }
-    // Adds and subracts capacity when ability is added or removed and displays current capacity
-    public void AdjustCapacity(bool added)
-    {
-        currCapacity += added ? ABILITY_CAPACITY_COST : -ABILITY_CAPACITY_COST;
-        capacityText.text = currCapacity.ToString() + '/' + maxCapacity;
-    }
-
-    // Remove halts when dropdown changes or when save is attempted
-    public void StopRemoving()
-    {
-        removingAbility = false;
-        alertText.text = "";
-    }
-
-    // Used by -+ buttons
-    public void IncrementStat(int statIndex)
-    {
-        if (statNums[statIndex] < MAX_STAT_NUMS[statIndex])
-        {
-            statNums[statIndex]++;
-            statTextNums[statIndex].text = statNums[statIndex].ToString();
-            capacityText.text = (++currCapacity).ToString() + '/' + maxCapacity;
-        }
-    }
-    public void DecrementStat(int statIndex)
-    {
-        if (statNums[statIndex] > MIN_STAT_NUMS[statIndex])
-        {
-            statNums[statIndex]--;
-            statTextNums[statIndex].text = statNums[statIndex].ToString();
-            capacityText.text = (--currCapacity).ToString() + '/' + maxCapacity;
-        }
-    }
-    // Used by flying toggle
-    public void ToggleFlying(Toggle flying)
-    {
-        capacityText.text = (currCapacity += flying.isOn ? FLYING_COST : -FLYING_COST).ToString() + '/' + maxCapacity;
-    }
     public void UpdateEnemyType()
     {
         maxCapacity = ENEMY_LEVEL_CAPACITIES[enemyTypes.value];
         capacityText.text = currCapacity.ToString() + '/' + maxCapacity;
-    }
-
-    public int GetStrength()
-    {
-        return statNums[2];
-    }
-    public int GetAttackRange()
-    {
-        return statNums[0];
-    }
-    public int GetPrecision()
-    {
-        return statNums[4];
     }
 }

@@ -180,12 +180,12 @@ public class UnitAbilityManager : MonoBehaviour
         AbilityData newAbility = new AbilityData(nameField.text, directed, biased, ally, potencies, durations, costPotencies, costDurations, globalStats, pushInts);
 
         // If editing from main ability list, init save location to ability being edited
-        enemyGenManager.OpenSavedAbilityData(newAbility, isInChar, !isInChar && editing ? enemyGenManager.lists[1].value : -1);
+        //enemyGenManager.OpenSavedAbilityData(newAbility, isInChar, !isInChar && editing ? enemyGenManager.lists[1].value : -1);
     }
     // Opens ability saving form in load
     public void LoadAbility()
     {
-        enemyGenManager.OpenSavedAbilityData(null, isInChar);
+        //enemyGenManager.OpenSavedAbilityData(null, isInChar);
     }
 
     // TODO: Calculate energy cost

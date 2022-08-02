@@ -83,7 +83,7 @@ public class MapEditorManager : MonoBehaviour
                 newButton = Instantiate(buttonPrefab, new Vector3(0, 0, 0), Quaternion.identity, buttonParent);
                 newButton.transform.localPosition = new Vector3((H_OFFSET * (j % 2)) + MARGIN, -(j / 2 * (V_OFFSET + MARGIN) + MARGIN), 0);
                 newButton.SetActive(true);
-                newButton.GetComponent<Image>().sprite = CharacterData.ConstructImage(currTileData[j].GetImage());
+                newButton.GetComponent<Image>().sprite = CharacterImageForm.ConstructImage(currTileData[j].GetImage());
                 buttons.Add(newButton);
             }
 
@@ -136,7 +136,7 @@ public class MapEditorManager : MonoBehaviour
                 // Position is left for first button, and every other button after
                 newButton.transform.localPosition = new Vector3((H_OFFSET * ((currTileData.Count - 1) % 2)) + MARGIN, -((currTileData.Count - 1) / 2 * (V_OFFSET + MARGIN) + MARGIN), 0);
                 newButton.SetActive(true);
-                newButton.GetComponent<Image>().sprite = CharacterData.ConstructImage(currTileData[currTileData.Count - 1].GetImage());
+                newButton.GetComponent<Image>().sprite = CharacterImageForm.ConstructImage(currTileData[currTileData.Count - 1].GetImage());
                 buttons.Add(newButton);
 
                 // Set viewport size
@@ -147,7 +147,7 @@ public class MapEditorManager : MonoBehaviour
             else
             {
                 currTileData[currTileIndex] = tileFormManager.GetTile();
-                buttons[currTileIndex].GetComponent<Image>().sprite = CharacterData.ConstructImage(tileFormManager.GetTile().GetImage());
+                buttons[currTileIndex].GetComponent<Image>().sprite = CharacterImageForm.ConstructImage(tileFormManager.GetTile().GetImage());
             }
         }
     }
@@ -187,7 +187,7 @@ public class MapEditorManager : MonoBehaviour
     {
         currTileIndex = buttons.IndexOf(button);
         currTile = currTileData[currTileIndex];
-        selectedTileImage.sprite = CharacterData.ConstructImage(currTileData[currTileIndex].GetImage());
+        selectedTileImage.sprite = CharacterImageForm.ConstructImage(currTileData[currTileIndex].GetImage());
     }
     public void RemoveTile()
     {

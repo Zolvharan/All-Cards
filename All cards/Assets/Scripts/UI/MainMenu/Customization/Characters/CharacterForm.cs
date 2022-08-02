@@ -4,53 +4,63 @@ using UnityEngine;
 using UnityEngine.UI;
 
 // Manages the character creation and editing menus
-public class MCManager : MonoBehaviour
+public class CharacterForm : CreationForm
 {
-    public CCManager ccManager;
-    public CIManager imageSelectionManager;
+    public GameObject charactersFrontPage;
+    public CharacterImageForm imageSelectionManager;
+    public SaveLoadForm saveLoadForm;
 
     public InputField nameField;
     public Image portrait;
-    byte[] portraitData;
+    protected byte[] portraitData;
     public Image battleSprite;
-    byte[] battleSpriteData;
+    protected byte[] battleSpriteData;
 
+    protected int maxCapacity;
     const int MAX_CAPACITY = 50;
-    int currCapacity;
+    protected int currCapacity;
     public Text capacityText;
     public Toggle flyingToggle;
-    const int FLYING_COST = 5;
-    const int ABILITY_CAPACITY_COST = 2;
+    protected const int FLYING_COST = 5;
+    protected const int ABILITY_CAPACITY_COST = 2;
     public Text[] statTextNums;
-    int[] statNums;
+    protected int[] statNums;
     // The highest and lowest numbers that stats can be
     // order is: MoveSpeed, AttackRange, Strength, EnergyRegen, Precision, Dexterity, Defense, Resistance
-    readonly int[] MIN_STAT_NUMS = { 0, 0, 0, 0, 0, 0, 0, 0 };
-    readonly int[] MAX_STAT_NUMS = { 10, 10, 10, 5, 10, 5, 5, 5 };
-    readonly int[] DEFAULT_STAT_NUMS = { 1, 1, 1, 1, 0, 0, 0, 0 };
+    protected readonly int[] MIN_STAT_NUMS = { 0, 0, 0, 0, 0, 0, 0, 0 };
+    protected readonly int[] MAX_STAT_NUMS = { 10, 10, 10, 5, 10, 5, 5, 5 };
+    protected readonly int[] DEFAULT_STAT_NUMS = { 1, 1, 1, 1, 0, 0, 0, 0 };
 
     public Dropdown abilityList;
     public List<AbilityData> currAbilities;
 
-    bool isPortrait;
-    const string PORTRAIT_PATH = ".\\SavedData\\Portraits";
-    const string BATTLE_SPRITE_PATH = ".\\SavedData\\BattleSprites";
+    protected bool isPortrait;
+    protected const string PORTRAIT_PATH = ".\\SavedData\\Portraits";
+    protected const string BATTLE_SPRITE_PATH = ".\\SavedData\\BattleSprites";
 
-    bool editing;
-    bool removingAbility;
+    protected bool editing;
+    protected bool removingAbility;
     public Text alertText;
 
-    public void OpenCreationForm(bool isEditing)
+    protected Dropdown currDropdown;
+
+    void OnEnable()
     {
+        RefreshAbilities();
+    }
+    public void OpenCreationForm(bool isEditing, Dropdown newDropdown)
+    {
+        maxCapacity = MAX_CAPACITY;
+        currDropdown = newDropdown;
         if (isEditing)
         {
             // Cannot edit if no characters are present
-            if (ccManager.lists[0].options.Count == 0)
+            if (currDropdown.options.Count == 0)
                 return;
 
             editing = true;
             // Get character selected
-            CharacterData currCharacter = SaveData.GetCharacters()[ccManager.lists[0].value];
+            CharacterData currCharacter = SaveData.GetCharacters()[currDropdown.value];
 
             nameField.text = currCharacter.GetName();
             statNums = new int[currCharacter.stats.Length];
@@ -63,13 +73,12 @@ public class MCManager : MonoBehaviour
             {
                 currAbilities.Add(currCharacter.abilities[i]);
             }
-            RefreshAbilities();
 
             // Set image data
             portraitData = currCharacter.portrait;
             battleSpriteData = currCharacter.battleSprite;
-            portrait.sprite = CharacterData.ConstructImage(portraitData);
-            battleSprite.sprite = CharacterData.ConstructImage(battleSpriteData);
+            portrait.sprite = CharacterImageForm.ConstructImage(portraitData);
+            battleSprite.sprite = CharacterImageForm.ConstructImage(battleSpriteData);
         }
         else
         {
@@ -81,10 +90,10 @@ public class MCManager : MonoBehaviour
             currAbilities = new List<AbilityData>();
 
             // Init images
-            portraitData = CIManager.GetTheEmpty();
-            portrait.sprite = CharacterData.ConstructImage(portraitData);
-            battleSpriteData = CIManager.GetTheEmpty();
-            battleSprite.sprite = CharacterData.ConstructImage(battleSpriteData);
+            portraitData = CharacterImageForm.GetTheEmpty();
+            portrait.sprite = CharacterImageForm.ConstructImage(portraitData);
+            battleSpriteData = CharacterImageForm.GetTheEmpty();
+            battleSprite.sprite = CharacterImageForm.ConstructImage(battleSpriteData);
         }
         // Initialize stat nums, and curr capacity
         currCapacity = 0;
@@ -95,31 +104,49 @@ public class MCManager : MonoBehaviour
         }
         if (flyingToggle.isOn)
             currCapacity += 4;
-        capacityText.text = currCapacity.ToString() + '/' + MAX_CAPACITY;
+        capacityText.text = currCapacity.ToString() + '/' + maxCapacity;
 
         removingAbility = false;
         alertText.text = "";
 
-        ccManager.DisplayCharForm();
+        this.gameObject.SetActive(true);
+    }
+    public void ReturnToFront()
+    {
+        charactersFrontPage.SetActive(true);
+        this.gameObject.SetActive(false);
     }
 
-    public void SaveCharacter()
+    public override void SaveItem()
+    {
+        // Turn ability list into array
+        AbilityData[] abilitiesToSave = new AbilityData[currAbilities.Count];
+        currAbilities.CopyTo(abilitiesToSave);
+        CharacterData newCharacter = new CharacterData(nameField.text, abilitiesToSave, portraitData, battleSpriteData, statNums, flyingToggle.isOn);
+        SaveData.SaveCharacter(newCharacter, editing ? currDropdown.value : -1);
+        charactersFrontPage.SetActive(true);
+        this.gameObject.SetActive(false);
+    }
+    public virtual void OpenSaveForm()
     {
         // Save is forbidden if curr capacity exceeds capacity
-        if (currCapacity > MAX_CAPACITY)
+        if (currCapacity > maxCapacity)
         {
             removingAbility = false;
             alertText.text = "Capacity exceeded, cannot save.";
         }
         else
         {
-            // Turn ability list into array
-            AbilityData[] abilitiesToSave = new AbilityData[currAbilities.Count];
-            currAbilities.CopyTo(abilitiesToSave);
-            CharacterData newCharacter = new CharacterData(nameField.text, abilitiesToSave, portraitData, battleSpriteData, statNums, flyingToggle.isOn);
+            List<string> names = new List<string>();
+            foreach (CharacterData character in SaveData.GetCharacters())
+            {
+                names.Add(character.GetName());
+            }
 
             // If editing, init save location to character being edited
-            ccManager.DisplaySavedCharacterData(newCharacter, editing ? ccManager.lists[0].value : -1);
+            saveLoadForm.gameObject.SetActive(true);
+            saveLoadForm.InitDisplay(this, names, false, editing ? currDropdown.value : -1);
+            this.gameObject.SetActive(false);
         }
     }
 
@@ -127,30 +154,40 @@ public class MCManager : MonoBehaviour
     {
         isPortrait = openPortrait;
         imageSelectionManager.gameObject.SetActive(true);
-        imageSelectionManager.InitDisplay(isPortrait ? PORTRAIT_PATH : BATTLE_SPRITE_PATH);
+        imageSelectionManager.InitDisplay(isPortrait ? PORTRAIT_PATH : BATTLE_SPRITE_PATH, this);
         this.gameObject.SetActive(false);
     }
     // Sets portrait or battleSprite if saving, and closes image selection
-    public void SetImage(bool saveChanges)
+    public override void SetImage(bool saveChanges, Sprite newSprite, byte[] newData)
     {
         this.gameObject.SetActive(true);
-        Sprite newImage = imageSelectionManager.GetCurrImage();
-        byte[] newData = imageSelectionManager.GetCurrData();
-        imageSelectionManager.ExitImages();
 
         if (saveChanges)
         {
             if (isPortrait)
             {
-                portrait.sprite = newImage;
+                portrait.sprite = newSprite;
                 portraitData = newData;
             }
             else
             {
-                battleSprite.sprite = newImage;
+                battleSprite.sprite = newSprite;
                 battleSpriteData = newData;
             }
         }
+    }
+
+    public AbilityData GetAbility()
+    {
+        if (abilityList.options.Count != 0)
+            return currAbilities[abilityList.value];
+        else
+            return null;
+    }
+    public int[] GetAbilityStats()
+    {
+        int[] abilityStats = {statNums[2], statNums[1], statNums[4]};
+        return abilityStats;
     }
 
     // Refreshes ability list when form is opened
@@ -197,7 +234,7 @@ public class MCManager : MonoBehaviour
     public void AdjustCapacity(bool added)
     {
         currCapacity += added ? ABILITY_CAPACITY_COST : -ABILITY_CAPACITY_COST;
-        capacityText.text = currCapacity.ToString() + '/' + MAX_CAPACITY;
+        capacityText.text = currCapacity.ToString() + '/' + maxCapacity;
     }
 
     // Remove halts when dropdown changes or when save is attempted
@@ -214,7 +251,7 @@ public class MCManager : MonoBehaviour
         {
             statNums[statIndex]++;
             statTextNums[statIndex].text = statNums[statIndex].ToString();
-            capacityText.text = (++currCapacity).ToString() + '/' + MAX_CAPACITY;
+            capacityText.text = (++currCapacity).ToString() + '/' + maxCapacity;
         }
     }
     public void DecrementStat(int statIndex)
@@ -223,13 +260,13 @@ public class MCManager : MonoBehaviour
         {
             statNums[statIndex]--;
             statTextNums[statIndex].text = statNums[statIndex].ToString();
-            capacityText.text = (--currCapacity).ToString() + '/' + MAX_CAPACITY;
+            capacityText.text = (--currCapacity).ToString() + '/' + maxCapacity;
         }
     }
     // Used by flying toggle
     public void ToggleFlying(Toggle flying)
     {
-        capacityText.text = (currCapacity += flying.isOn ? FLYING_COST : -FLYING_COST).ToString() + '/' + MAX_CAPACITY;
+        capacityText.text = (currCapacity += flying.isOn ? FLYING_COST : -FLYING_COST).ToString() + '/' + maxCapacity;
     }
 
     public int GetStrength()

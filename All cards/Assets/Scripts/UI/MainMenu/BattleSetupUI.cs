@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class BattleSetupUI : MonoBehaviour
 {
-    public MMManager mainManager;
+    public MainMenuManager mainManager;
     public EquipFormUI equipForm;
 
     public Dropdown charList;

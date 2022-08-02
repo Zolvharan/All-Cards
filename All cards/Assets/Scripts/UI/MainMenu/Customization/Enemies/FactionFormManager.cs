@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class FactionFormManager : MonoBehaviour
+public class FactionFormManager : CreationForm
 {
     public EnemyGenManager enemyGenManager;
-    public CIManager imageSelectionManager;
+    public CharacterImageForm imageSelectionManager;
 
     public InputField nameField;
     public Dropdown unitList;
@@ -22,8 +22,8 @@ public class FactionFormManager : MonoBehaviour
 
     public void InitDisplay(bool isEditing)
     {
-        bannerData = CIManager.GetTheEmpty();
-        banner.sprite = CharacterData.ConstructImage(bannerData);
+        bannerData = CharacterImageForm.GetTheEmpty();
+        banner.sprite = CharacterImageForm.ConstructImage(bannerData);
 
         editing = isEditing;
         if (isEditing)
@@ -38,7 +38,7 @@ public class FactionFormManager : MonoBehaviour
                 currUnits.Add(currFaction.units[i]);
             }
             bannerData = currFaction.GetBanner();
-            banner.sprite = CharacterData.ConstructImage(bannerData);
+            banner.sprite = CharacterImageForm.ConstructImage(bannerData);
         }
         else
         {
@@ -49,24 +49,26 @@ public class FactionFormManager : MonoBehaviour
 
         alertText.text = "";
     }
+    public void ExitFactionForm()
+    {
+        enemyGenManager.gameObject.SetActive(true);
+        this.gameObject.SetActive(false);
+    }
 
     public void OpenImages()
     {
         imageSelectionManager.gameObject.SetActive(true);
-        imageSelectionManager.InitDisplay(BANNER_PATH);
+        imageSelectionManager.InitDisplay(BANNER_PATH, this);
         this.gameObject.SetActive(false);
     }
     // Sets portrait or battleSprite if saving, and closes image selection
-    public void SetImage(bool saveChanges)
+    public override void SetImage(bool saveChanges, Sprite newSprite, byte[] newData)
     {
         this.gameObject.SetActive(true);
-        Sprite newImage = imageSelectionManager.GetCurrImage();
-        byte[] newData = imageSelectionManager.GetCurrData();
-        imageSelectionManager.ExitImages();
 
         if (saveChanges)
         {
-            banner.sprite = newImage;
+            banner.sprite = newSprite;
             bannerData = new byte[newData.Length];
             newData.CopyTo(bannerData, 0);
         }

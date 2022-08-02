@@ -39,7 +39,7 @@ public class ActionDisplay : MonoBehaviour
 
     public void SetAttackDisplay(CharacterStats effectedUnit, int damage, bool isCrit)
     {
-        mainCamera.transform.position = new Vector3(effectedUnit.gameObject.transform.position.x, effectedUnit.gameObject.transform.position.y, transform.position.z);
+        mainCamera.transform.position = new Vector3(effectedUnit.gameObject.transform.position.x, effectedUnit.gameObject.transform.position.y, mainCamera.transform.position.z);
         actionName.text = "Attack";
         InitCharacterDisplay(effectedUnit, effectedUnit.GetStats(), effectedUnit.GetDurations());
 
@@ -90,13 +90,15 @@ public class ActionDisplay : MonoBehaviour
         ExitDisplay();
     }
 
-    public void SetAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
+    public void SetAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> prePositions,
+        List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
     {
         actionName.text = abilityName;
 
-        displayCoroutine = DisplayAbility(effectedUnits, preStats, preDurations, potencies, durations, isCrits, castingUnit, costPotencies, costDurations, abilityName);
+        displayCoroutine = DisplayAbility(effectedUnits, preStats, preDurations, prePositions, potencies, durations, isCrits, castingUnit, costPotencies, costDurations, abilityName);
     }
-    public IEnumerator DisplayAbility(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
+    public IEnumerator DisplayAbility(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> prePositions,
+        List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
     {
         // Disable playerControl while display is going
         playerControl.enabled = false;
@@ -112,7 +114,7 @@ public class ActionDisplay : MonoBehaviour
         for (int i = 0; i < effectedUnits.Count; i++)
         {
             InitCharacterDisplay(effectedUnits[i], preStats[i], preDurations[i]);
-            mainCamera.transform.position = new Vector3(effectedUnits[i].gameObject.transform.position.x, effectedUnits[i].gameObject.transform.position.y, transform.position.z);
+            mainCamera.transform.position = new Vector3(effectedUnits[i].gameObject.transform.position.x, effectedUnits[i].gameObject.transform.position.y, mainCamera.transform.position.z);
             for (j = 0; j < potencies[i].Length; j++)
             {
                 currStatValue = preStats[i][j];
@@ -162,7 +164,7 @@ public class ActionDisplay : MonoBehaviour
             yield return new WaitForSeconds(CHARACTER_SWITCH_DELAY);
         }
         InitCharacterDisplay(castingUnit, castingUnit.GetStats(), castingUnit.GetDurations());
-        mainCamera.transform.position = new Vector3(castingUnit.gameObject.transform.position.x, castingUnit.gameObject.transform.position.y, transform.position.z);
+        mainCamera.transform.position = new Vector3(castingUnit.gameObject.transform.position.x, castingUnit.gameObject.transform.position.y, mainCamera.transform.position.z);
         // Cost display
         for (j = 0; j < costPotencies.Length; j++)
         {

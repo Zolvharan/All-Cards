@@ -41,8 +41,8 @@ public class CharacterData
         baseStats["defense"] = stats[6];
         baseStats["resistance"] = stats[7];
 
-        Sprite newPortrait = ConstructImage(portrait);
-        Sprite newBattleSprite = ConstructImage(battleSprite);
+        Sprite newPortrait = CharacterImageForm.ConstructImage(portrait);
+        Sprite newBattleSprite = CharacterImageForm.ConstructImage(battleSprite);
         // TODO: init abilities
         Ability[] newAbilities = new Ability[abilities.Length];
         for (int i = 0; i < abilities.Length; i++)
@@ -51,19 +51,6 @@ public class CharacterData
         }
 
         basePrefab.ConstructCharacter(characterName, newAbilities, newPortrait, newBattleSprite, flying, baseStats, newItems, isPlayer);
-    }
-    // Construct sprite out of file data
-    static public Sprite ConstructImage(byte[] data)
-    {
-        Sprite newSprite;
-        Texture2D texture = new Texture2D(50, 50);
-        if (texture.LoadImage(data))
-        {
-            newSprite = Sprite.Create(texture, new Rect(0, 0, 50, 50), new Vector2(0.5f, 0.5f), 50);
-            return newSprite;
-        }
-        else
-            return null;
     }
 
     public string GetName()

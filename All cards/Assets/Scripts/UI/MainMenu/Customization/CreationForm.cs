@@ -13,4 +13,8 @@ public class CreationForm : MonoBehaviour
     {
 
     }
+    public virtual void SetImage(bool saveChanges, Sprite newSprite, byte[] newData)
+    {
+
+    }
 }

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class MainMapEditManager : MonoBehaviour
 {
-    public MMManager mainMenuManager;
+    public MainMenuManager mainMenuManager;
     public GameObject tilesetTypeSelection;
 
     public MapEditorManager mapEditorManager;

@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Generally manages the main menu
-public class MMManager : MonoBehaviour
+public class MainMenuManager : MonoBehaviour
 {
     //public GameObject BattleUI;
 
     public GameObject frontPage;
     public BattleSetupUI customBattle;
-    public CCManager characters;
+    public CharactersFrontPage characters;
     public EnemyGenManager enemies;
     public GameObject tilesets;
 
@@ -32,7 +32,6 @@ public class MMManager : MonoBehaviour
     public void OpenCharacters()
     {
         characters.gameObject.SetActive(true);
-        characters.InitDisplay();
         frontPage.SetActive(false);
     }
     public void OpenEnemies()

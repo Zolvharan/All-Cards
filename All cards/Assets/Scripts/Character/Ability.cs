@@ -84,6 +84,7 @@ public class Ability
         List<int[]> preDurations = new List<int[]>();
         List<int[]> effectivePotencies = new List<int[]>();
         List<bool[]> isCrits = new List<bool[]>();
+        List<int[]> prePositions = new List<int[]>();
 
         // Used for biased abilities
         int reverseEffect = 1;
@@ -149,8 +150,10 @@ public class Ability
                 }
                 // Move unit if ability pushes. Will not push if no push is present, or if ability fails to hit enemy.
                 // Always pushes ally
+                prePositions.Add(new int[2] { tile.xPos, tile.yPos });
                 if ((pushInts[0] != 0 || pushInts[1] != 0) && ((tile.currUnit.player == usedByPlayer) || negHit >= 1))
                 {
+                    // CalculateNewPosition(startTile, force);
                     // TODO
                 }
                 if (negHit < 1)
@@ -174,10 +177,11 @@ public class Ability
             // TODO
         }
 
-        SetUpAbilityDisplay(effectedUnits, preStats, preDurations, effectivePotencies, isCrits, caster, actionDisplay);
+        SetUpAbilityDisplay(effectedUnits, preStats, preDurations, prePositions, effectivePotencies, isCrits, caster, actionDisplay);
     }
 
-    void SetUpAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> effectivePotencies, List<bool[]> isCrits, CharacterStats caster, ActionDisplay actionDisplay)
+    void SetUpAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> prePositions,
+        List<int[]> effectivePotencies, List<bool[]> isCrits, CharacterStats caster, ActionDisplay actionDisplay)
     {
         int[] reDurations = new int[10];
         int[] reCostPotencies = new int[10];
@@ -189,8 +193,24 @@ public class Ability
             reCostDurations[i] = costDurations[CharacterStats.statTargets[i]];
         }
 
-        actionDisplay.SetAbilityDisplay(effectedUnits, preStats, preDurations, effectivePotencies, reDurations, isCrits, caster, reCostPotencies, reCostDurations, abilityName);
+        actionDisplay.SetAbilityDisplay(effectedUnits, preStats, preDurations, prePositions, effectivePotencies, reDurations, isCrits, caster, reCostPotencies, reCostDurations, abilityName);
     }
+
+    /*int[] CalculateNewPosition(Tile startTile, Tile sourceTile, int[] force)
+    {
+        int greaterForce = force[0] > force[1] ? force[0] : force[1];
+        int lesserForce = force[0] <= force[1] ? force[0] : force[1];
+        bool xIsGreater = force[0] > force[1] ? true : false;
+        int currXPos;
+        int currYPos;
+
+        for (int i = 0; i < greaterForce; i++)
+        {
+            
+        }
+
+        return null;
+    }*/
 
     public Dictionary<string, int> GetPotencies()
     {

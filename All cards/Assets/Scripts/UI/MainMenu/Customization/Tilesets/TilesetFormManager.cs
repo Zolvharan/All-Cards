@@ -227,14 +227,14 @@ public class TilesetFormManager : MonoBehaviour
         // Set to new tile
         if (tileScroll.value == tiles.Count)
         {
-            tileSprite.sprite = CharacterData.ConstructImage(File.ReadAllBytes(newTilePath));
+            tileSprite.sprite = CharacterImageForm.ConstructImage(File.ReadAllBytes(newTilePath));
             tileText.text = newTileName;
             // Set slider
             tileWeightSlider.value = 0;
         }
         else
         {
-            tileSprite.sprite = CharacterData.ConstructImage(tiles[(int)tileScroll.value].GetImage());
+            tileSprite.sprite = CharacterImageForm.ConstructImage(tiles[(int)tileScroll.value].GetImage());
             tileText.text = tiles[(int)tileScroll.value].GetName();
             // Set slider
             tileWeightSlider.value = tileWeights[(int)tileScroll.value];
@@ -245,7 +245,7 @@ public class TilesetFormManager : MonoBehaviour
         // Set to new landform
         if (landformScroll.value == landforms.Count)
         {
-            landformSprite.sprite = CharacterData.ConstructImage(File.ReadAllBytes(newTilePath));
+            landformSprite.sprite = CharacterImageForm.ConstructImage(File.ReadAllBytes(newTilePath));
             landformText.text = newLandformName;
             // Set sliders
             landformMinSlider.value = 0;
@@ -255,7 +255,7 @@ public class TilesetFormManager : MonoBehaviour
         }
         else
         {
-            landformSprite.sprite = CharacterData.ConstructImage(landforms[(int)landformScroll.value].GetTile().GetImage());
+            landformSprite.sprite = CharacterImageForm.ConstructImage(landforms[(int)landformScroll.value].GetTile().GetImage());
             landformText.text = landforms[(int)landformScroll.value].GetName();
             // Save and set sliders
             landformMinSlider.value = minLandforms[(int)landformScroll.value];

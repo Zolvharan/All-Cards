@@ -5,10 +5,11 @@ using UnityEngine.UI;
 using System;
 
 // Manages the ability creation and editing menus
-public class MAManager : MonoBehaviour
+public class AbilityForm : CreationForm
 {
-    public CCManager characterManager;
-    public MCManager charFormManager;
+    GameObject frontPage;
+    CharacterForm characterForm;
+    public SaveLoadForm saveLoadForm;
 
     public Toggle directedToggle;
     public Toggle biasedToggle;
@@ -50,6 +51,7 @@ public class MAManager : MonoBehaviour
 
     bool isInChar;
     bool editing;
+    Dropdown currList;
 
     public Text energyBaseTextNum;
     public Text energyAdjustedTextNum;
@@ -75,36 +77,37 @@ public class MAManager : MonoBehaviour
     const float NEGATIVE_RANGE_DISCOUNT = 0.1f;
     const float NEGATIVE_PRECISION_DISCOUNT = 0.1f;
 
-    // Accesses ability in char form
-    public void OpenAbilityFormInCharacter(bool isEditing)
+    public void OpenAbilityForm(bool isEditing, Dropdown newList, AbilityData currAbility, GameObject newFrontPage, bool inChar, CharacterForm newCharacterForm = null, int[] currStats = null)
     {
-        isInChar = true;
+        frontPage = newFrontPage;
+        characterForm = newCharacterForm;
+        currList = newList;
+        isInChar = inChar;
         charComponents.SetActive(isInChar);
 
         if (!isEditing)
             InitAbilityForm(false);
         // Cannot edit if no ability is present
-        else if (!(charFormManager.abilityList.options.Count == 0))
-            InitAbilityForm(true, charFormManager.currAbilities[charFormManager.abilityList.value]);
+        else if (currList.options.Count != 0)
+            InitAbilityForm(true, currAbility);
 
-        currStrength = charFormManager.GetStrength();
-        currRange = charFormManager.GetAttackRange();
-        currPrecision = charFormManager.GetPrecision();
-        baseStatTexts[0].text = "(" + currStrength + ")";
-        baseStatTexts[1].text = "(" + currRange + ")";
-        baseStatTexts[2].text = "(" + currPrecision + ")";
-    }
-    // Accessess ability directly
-    public void OpenAbilityForm(bool isEditing)
-    {
-        isInChar = false;
-        charComponents.SetActive(isInChar);
+        if (currStats != null)
+        {
+            currStrength = currStats[0];
+            currRange = currStats[1];
+            currPrecision = currStats[2];
+            baseStatTexts[0].text = "(" + currStrength + ")";
+            baseStatTexts[1].text = "(" + currRange + ")";
+            baseStatTexts[2].text = "(" + currPrecision + ")";
+        }
+        else
+        {
+            baseStatTexts[0].text = "";
+            baseStatTexts[1].text = "";
+            baseStatTexts[2].text = "";
+        }
 
-        if (!isEditing)
-            InitAbilityForm(false);
-        // Cannot edit if no ability is present
-        else if (characterManager.lists[1].options.Count != 0)
-            InitAbilityForm(true, SaveData.GetAbilities()[characterManager.lists[1].value]);
+        this.gameObject.SetActive(true);
     }
     void InitAbilityForm(bool isEditing, AbilityData currAbility = null)
     {
@@ -149,7 +152,6 @@ public class MAManager : MonoBehaviour
         SetViewNums();
 
         SetEnergyCost();
-        characterManager.DisplayAbilityForm();
     }
 
     public void ExitAbilityForm(bool saveChanges)
@@ -158,7 +160,7 @@ public class MAManager : MonoBehaviour
             ReOpenCreationForm(saveChanges);
         else
         {
-            characterManager.OpenCharacters();
+            frontPage.SetActive(true);
             this.gameObject.SetActive(false);
         }
     }
@@ -172,40 +174,65 @@ public class MAManager : MonoBehaviour
             ReOpenForm(newAbility);
         }
         else
-            characterManager.DisplayCharForm();
-    }
-    // Used to add loaded ability data to character
-    public void ReOpenFormWithLoad(AbilityData loadAbility)
-    {
-        // Load data
-        ReOpenForm(loadAbility);
+        {
+            characterForm.gameObject.SetActive(true);
+            this.gameObject.SetActive(false);
+        }
     }
     public void ReOpenForm(AbilityData newAbility)
     {
         if (editing)
-            charFormManager.currAbilities[charFormManager.abilityList.value] = newAbility;
+            characterForm.currAbilities[characterForm.abilityList.value] = newAbility;
         else
         {
-            charFormManager.currAbilities.Add(newAbility);
-            charFormManager.AdjustCapacity(true);
+            characterForm.currAbilities.Add(newAbility);
+            characterForm.AdjustCapacity(true);
         }
 
-        characterManager.DisplayCharForm();
+        characterForm.gameObject.SetActive(true);
+        this.gameObject.SetActive(false);
     }
 
-    // Opens ability saving form
-    public void SaveAbility()
+    public override void SaveItem()
     {
         costPotencies[9] = CalculateEnergyCost(true);
         AbilityData newAbility = new AbilityData(nameField.text, directed, biased, ally, potencies, durations, costPotencies, costDurations, globalStats, pushInts);
+        SaveData.SaveAbility(newAbility, !isInChar && editing ? saveLoadForm.GetSaveValue() - 1 : -1);
+        if (isInChar)
+            this.gameObject.SetActive(true);
+        else
+            frontPage.SetActive(true);
+    }
+    public override void LoadItem()
+    {
+        ReOpenForm(SaveData.GetAbilities()[saveLoadForm.GetLoadValue()]);
+    }
+    // Opens ability saving form
+    public void OpenSaveForm()
+    {
+        List<string> names = new List<string>();
+        foreach (AbilityData ability in SaveData.GetAbilities())
+        {
+            names.Add(ability.GetName());
+        }
 
+        saveLoadForm.gameObject.SetActive(true);
         // If editing from main ability list, init save location to ability being edited
-        characterManager.DisplaySavedAbilityData(newAbility, isInChar, !isInChar && editing ? characterManager.lists[1].value : -1);
+        saveLoadForm.InitDisplay(this, names, false, !isInChar && editing ? currList.value : -1);
+        this.gameObject.SetActive(false);
     }
     // Opens ability saving form in load
-    public void LoadAbility()
+    public void OpenLoadForm()
     {
-        characterManager.DisplaySavedAbilityData(null, isInChar);
+        List<string> names = new List<string>();
+        foreach (AbilityData ability in SaveData.GetAbilities())
+        {
+            names.Add(ability.GetName());
+        }
+
+        saveLoadForm.gameObject.SetActive(true);
+        saveLoadForm.InitDisplay(this, names, true, !isInChar && editing ? currList.value : -1);
+        this.gameObject.SetActive(false);
     }
 
     // Adjusted calcuates current stat modifiers

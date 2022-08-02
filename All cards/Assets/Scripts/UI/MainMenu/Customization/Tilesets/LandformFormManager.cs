@@ -49,7 +49,7 @@ public class LandformFormManager : MonoBehaviour
         {
             currTile = tileFormManager.GetTile();
             tileText.text = currTile.GetName();
-            tileImage.sprite = CharacterData.ConstructImage(currTile.GetImage());
+            tileImage.sprite = CharacterImageForm.ConstructImage(currTile.GetImage());
             isInTiles = false;
         }
     }
@@ -83,7 +83,7 @@ public class LandformFormManager : MonoBehaviour
         subSizeTextNums[2].text = subLandformSliders[2].value.ToString();
 
         currTile = subLandform.GetTile();
-        tileImage.sprite = CharacterData.ConstructImage(currTile.GetImage());
+        tileImage.sprite = CharacterImageForm.ConstructImage(currTile.GetImage());
         tileText.text = currTile.GetName();
     }
     public void OpenMainForm(bool saveChanges)
@@ -110,7 +110,7 @@ public class LandformFormManager : MonoBehaviour
         snakinessSlider.value = currLandform.GetSnakiness();
 
         currTile = currLandform.GetTile();
-        tileImage.sprite = CharacterData.ConstructImage(currTile.GetImage());
+        tileImage.sprite = CharacterImageForm.ConstructImage(currTile.GetImage());
         tileText.text = currTile.GetName();
     }
 
@@ -150,7 +150,7 @@ public class LandformFormManager : MonoBehaviour
             subLandform = currLandform.GetSubLandform();
             nameField.text = currLandform.GetName();
             currTile = currLandform.GetTile();
-            tileImage.sprite = CharacterData.ConstructImage(currLandform.GetTile().GetImage());
+            tileImage.sprite = CharacterImageForm.ConstructImage(currLandform.GetTile().GetImage());
             tileText.text = currLandform.GetTile().GetName();
             sizeNums = new int[4];
             sizeNums[0] = currLandform.GetMinX();
@@ -179,7 +179,7 @@ public class LandformFormManager : MonoBehaviour
             subLandform = SubLandformData.ConstructDefault();
             nameField.text = "";
             currTile = TileFormManager.GetDefaultTile();
-            tileImage.sprite = CharacterData.ConstructImage(currTile.GetImage());
+            tileImage.sprite = CharacterImageForm.ConstructImage(currTile.GetImage());
             tileText.text = currTile.GetName();
             sizeNums = new int[4];
             subNums = new int[4];
