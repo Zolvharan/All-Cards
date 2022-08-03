@@ -76,7 +76,7 @@ public class Ability
     }
 
     // player determines relative friend and foe, caster is used to apply cost
-    public void UseAbility(HashSet<Tile> tiles, bool player, CharacterStats caster, ActionDisplay actionDisplay)
+    public void UseAbility(HashSet<Tile> tiles, Tile aimedPoint, bool player, CharacterStats caster, ActionDisplay actionDisplay)
     {
         // Data collected for animation display
         List<CharacterStats> effectedUnits = new List<CharacterStats>();
@@ -84,7 +84,8 @@ public class Ability
         List<int[]> preDurations = new List<int[]>();
         List<int[]> effectivePotencies = new List<int[]>();
         List<bool[]> isCrits = new List<bool[]>();
-        List<int[]> prePositions = new List<int[]>();
+        List<Vector3> prePositions = new List<Vector3>();
+        List<Tile> toPush = new List<Tile>();
 
         // Used for biased abilities
         int reverseEffect = 1;
@@ -150,11 +151,14 @@ public class Ability
                 }
                 // Move unit if ability pushes. Will not push if no push is present, or if ability fails to hit enemy.
                 // Always pushes ally
-                prePositions.Add(new int[2] { tile.xPos, tile.yPos });
-                if ((pushInts[0] != 0 || pushInts[1] != 0) && ((tile.currUnit.player == usedByPlayer) || negHit >= 1))
+                if (pushInts[0] != 0 || pushInts[1] != 0)
                 {
-                    // CalculateNewPosition(startTile, force);
-                    // TODO
+                    // prePositions is empty if not a push ability
+                    prePositions.Add(tile.currUnit.transform.position);
+                    if ((tile.currUnit.player == usedByPlayer) || negHit >= 1)
+                    {
+                        toPush.Add(tile);
+                    }
                 }
                 if (negHit < 1)
                 {
@@ -163,6 +167,30 @@ public class Ability
             }
             reverseEffect = 1;
         }
+        // Apply pushes
+        int greatestDistance;
+        int currDistance;
+        Tile currTile;
+        Tile nextTile;
+        while (toPush.Count > 0)
+        {
+            greatestDistance = 0;
+            currTile = toPush[0];
+            foreach (Tile tile in toPush)
+            {
+                // TODO: Distance must adjust to direction
+                currDistance = Math.Abs(Math.Abs(caster.currTile.xPos) - Math.Abs(tile.xPos)) + Math.Abs(Math.Abs(caster.currTile.yPos) - Math.Abs(tile.yPos));
+                if (currDistance > greatestDistance)
+                {
+                    greatestDistance = currDistance;
+                    currTile = tile;
+                }
+            }
+            nextTile = CalculateNewPosition(currTile, caster.currTile, aimedPoint, new int[] { pushInts[0], pushInts[1] });
+            nextTile.MoveUnit(currTile.currUnit);
+            toPush.Remove(currTile);
+        }
+
         // Apply cost, cost ignores evasion and mitigation
         foreach (string target in CharacterStats.statTargets)
         {
@@ -172,15 +200,16 @@ public class Ability
             caster.AddStatEffect(target, costDurations[target], -costPotencies[target], true);
         }
         // Apply self push
-        if (pushInts[1] != 0 || pushInts[2] != 0)
+        if (pushInts[2] != 0 || pushInts[3] != 0)
         {
-            // TODO
+            nextTile = CalculateNewPosition(caster.currTile, caster.currTile, caster.currTile, new int[] { pushInts[2], pushInts[3] });
+            nextTile.MoveUnit(caster);
         }
 
         SetUpAbilityDisplay(effectedUnits, preStats, preDurations, prePositions, effectivePotencies, isCrits, caster, actionDisplay);
     }
 
-    void SetUpAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> prePositions,
+    void SetUpAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<Vector3> prePositions,
         List<int[]> effectivePotencies, List<bool[]> isCrits, CharacterStats caster, ActionDisplay actionDisplay)
     {
         int[] reDurations = new int[10];
@@ -196,21 +225,45 @@ public class Ability
         actionDisplay.SetAbilityDisplay(effectedUnits, preStats, preDurations, prePositions, effectivePotencies, reDurations, isCrits, caster, reCostPotencies, reCostDurations, abilityName);
     }
 
-    /*int[] CalculateNewPosition(Tile startTile, Tile sourceTile, int[] force)
+    Tile CalculateNewPosition(Tile startTile, Tile sourceTile, Tile endTile, int[] force)
     {
         int greaterForce = force[0] > force[1] ? force[0] : force[1];
-        int lesserForce = force[0] <= force[1] ? force[0] : force[1];
-        bool xIsGreater = force[0] > force[1] ? true : false;
-        int currXPos;
-        int currYPos;
+        int currXPos = startTile.xPos;
+        int currYPos = startTile.yPos;
+        float nextXPos = currXPos;
+        float nextYPos = currYPos;
+
+        // Calculate direction weight
+        float[] direction = new float[] { endTile.xPos - sourceTile.xPos, endTile.yPos - sourceTile.yPos };
+        // If cast on self, aim true
+        if (direction[0] == 0 && direction[1] == 0)
+            direction[1] = 1;
+
+        float xPosTick = (force[0] * direction[1]) + (force[1] * direction[0]);
+        float yPosTick = (force[1] * direction[1]) - (force[0] * direction[0]);
+        if (Math.Abs(xPosTick) > Math.Abs(yPosTick))
+        {
+            yPosTick /= Math.Abs(xPosTick);
+            xPosTick /= Math.Abs(xPosTick);
+        }
+        else
+        {
+            xPosTick /= Math.Abs(yPosTick);
+            yPosTick /= Math.Abs(yPosTick);
+        }
 
         for (int i = 0; i < greaterForce; i++)
         {
-            
+            nextXPos += xPosTick;
+            nextYPos += yPosTick;
+            if (!startTile.map.IsWithinBounds((int)Math.Round(nextXPos), (int)Math.Round(nextYPos)) || !startTile.map.tiles[(int)Math.Round(nextXPos)][(int)Math.Round(nextYPos)].IsPassable())
+                break;
+            currXPos = (int)Math.Round(nextXPos);
+            currYPos = (int)Math.Round(nextYPos);
         }
 
-        return null;
-    }*/
+        return startTile.map.tiles[currXPos][currYPos];
+    }
 
     public Dictionary<string, int> GetPotencies()
     {

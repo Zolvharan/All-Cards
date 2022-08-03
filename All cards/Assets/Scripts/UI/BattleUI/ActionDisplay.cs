@@ -22,6 +22,10 @@ public class ActionDisplay : MonoBehaviour
     const float CLOSING_DELAY = 2;
     const float CHARACTER_SWITCH_DELAY = 2;
 
+    const float PUSH_DURATION = 0.4f;
+    const float PUSH_TICK = 0.01f;
+    const float PUSH_DELAY = 1;
+
     IEnumerator displayCoroutine;
 
     static HashSet<CharacterStats> deadUnits;
@@ -90,78 +94,110 @@ public class ActionDisplay : MonoBehaviour
         ExitDisplay();
     }
 
-    public void SetAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> prePositions,
+    public void SetAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<Vector3> prePositions,
         List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
     {
         actionName.text = abilityName;
 
         displayCoroutine = DisplayAbility(effectedUnits, preStats, preDurations, prePositions, potencies, durations, isCrits, castingUnit, costPotencies, costDurations, abilityName);
     }
-    public IEnumerator DisplayAbility(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<int[]> prePositions,
+    public IEnumerator DisplayAbility(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<Vector3> prePositions,
         List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
     {
         // Disable playerControl while display is going
         playerControl.enabled = false;
-        mainDisplay.SetActive(true);
         menu.SetActive(false);
 
         float currStatValue;
         int j;
         int k;
 
-        InitCharacterDisplay(effectedUnits[0], preStats[0], preDurations[0]);
-        yield return new WaitForSeconds(OPENING_DELAY);
-        for (int i = 0; i < effectedUnits.Count; i++)
+        List<Vector3> postPositions = new List<Vector3>();
+        // Cannot display attack that hits nothing
+        if (effectedUnits.Count > 0)
         {
-            InitCharacterDisplay(effectedUnits[i], preStats[i], preDurations[i]);
-            mainCamera.transform.position = new Vector3(effectedUnits[i].gameObject.transform.position.x, effectedUnits[i].gameObject.transform.position.y, mainCamera.transform.position.z);
-            for (j = 0; j < potencies[i].Length; j++)
+            // Display pushing, prePositions is empty if ability does not push
+            if (prePositions.Count > 0)
             {
-                currStatValue = preStats[i][j];
-                // Miss
-                if (potencies[i][j] == 65535)
+                // Collect final positions
+                for (int i = 0; i < effectedUnits.Count; i++)
                 {
-                    missTexts[j].gameObject.SetActive(true);
-                    missTexts[j].text = "Miss";
-                    yield return new WaitForSeconds(MISS_DELAY);
+                    postPositions.Add(effectedUnits[i].transform.position);
                 }
-                else if (potencies[i][j] == 0)
+                for (int i = 0; i < prePositions.Count; i++)
                 {
-                    missTexts[j].gameObject.SetActive(true);
-                    missTexts[j].text = "No effect";
-                    yield return new WaitForSeconds(MISS_DELAY);
+                    effectedUnits[i].transform.position = prePositions[i];
                 }
-                // Hit
-                else if (potencies[i][j] != -65535)
+                yield return new WaitForSeconds(PUSH_DELAY);
+                for (float i = 0; i < PUSH_DURATION; i += PUSH_TICK)
                 {
-                    if (isCrits[i][j])
+                    for (j = 0; j < prePositions.Count; j++)
                     {
-                        missTexts[j].gameObject.SetActive(true);
-                        missTexts[j].text = "Critical";
+                        effectedUnits[j].transform.position = Vector3.Lerp(prePositions[j], effectedUnits[j].currTile.transform.position, i / PUSH_DURATION);
+                        yield return new WaitForSeconds(PUSH_TICK);
                     }
-                    durationNums[j].text = durations[j] == 0 ? "" : durations[j].ToString();
-                    for (k = 0; k < System.Math.Abs(potencies[i][j]) && statNums[j].text != "0"; k++)
-                    {
-                        // Animate health bars and stat num
-                        currStatValue += potencies[i][j] > 0 ? 1 : -1;
-                        // Change stat bars if health or energy
-                        if (j == 0)
-                        {
-                            statBars[0].transform.localScale = new Vector3((currStatValue / effectedUnits[i].GetMaxHealth() <= 1 ? (float)currStatValue / (float)effectedUnits[i].GetMaxHealth() : 1),
-                                statBars[0].transform.localScale.y, statBars[0].transform.localScale.x);
-                            statBars[1].transform.localScale = new Vector3(((float)currStatValue / (float)effectedUnits[i].GetMaxHealth() > 1 ? ((float)currStatValue - (float)effectedUnits[i].GetMaxHealth()) / (float)effectedUnits[i].GetMaxHealth() : 0),
-                                statBars[1].transform.localScale.y, statBars[1].transform.localScale.x);
-                        }
-                        else if (j == 1)
-                            statBars[2].transform.localScale = new Vector3((currStatValue / effectedUnits[i].GetMaxEnergy()), statBars[2].transform.localScale.y, statBars[2].transform.localScale.x);
-
-                        statNums[j].text = currStatValue.ToString();
-                        yield return new WaitForSeconds(STAT_TICK_DELAY);
-                    }
+                }
+                // Set final positions back
+                for (int i = 0; i < postPositions.Count; i++)
+                {
+                    effectedUnits[i].transform.position = postPositions[i];
                 }
             }
+            mainDisplay.SetActive(true);
+            InitCharacterDisplay(effectedUnits[0], preStats[0], preDurations[0]);
+            yield return new WaitForSeconds(OPENING_DELAY);
+            for (int i = 0; i < effectedUnits.Count; i++)
+            {
+                InitCharacterDisplay(effectedUnits[i], preStats[i], preDurations[i]);
+                mainCamera.transform.position = new Vector3(effectedUnits[i].gameObject.transform.position.x, effectedUnits[i].gameObject.transform.position.y, mainCamera.transform.position.z);
+                for (j = 0; j < potencies[i].Length; j++)
+                {
+                    currStatValue = preStats[i][j];
+                    // Miss
+                    if (potencies[i][j] == 65535)
+                    {
+                        missTexts[j].gameObject.SetActive(true);
+                        missTexts[j].text = "Miss";
+                        yield return new WaitForSeconds(MISS_DELAY);
+                    }
+                    else if (potencies[i][j] == 0)
+                    {
+                        missTexts[j].gameObject.SetActive(true);
+                        missTexts[j].text = "No effect";
+                        yield return new WaitForSeconds(MISS_DELAY);
+                    }
+                    // Hit
+                    else if (potencies[i][j] != -65535)
+                    {
+                        if (isCrits[i][j])
+                        {
+                            missTexts[j].gameObject.SetActive(true);
+                            missTexts[j].text = "Critical";
+                        }
+                        durationNums[j].text = durations[j] == 0 ? "" : durations[j].ToString();
+                        for (k = 0; k < System.Math.Abs(potencies[i][j]) && statNums[j].text != "0"; k++)
+                        {
+                            // Animate health bars and stat num
+                            currStatValue += potencies[i][j] > 0 ? 1 : -1;
+                            // Change stat bars if health or energy
+                            if (j == 0)
+                            {
+                                statBars[0].transform.localScale = new Vector3((currStatValue / effectedUnits[i].GetMaxHealth() <= 1 ? (float)currStatValue / (float)effectedUnits[i].GetMaxHealth() : 1),
+                                    statBars[0].transform.localScale.y, statBars[0].transform.localScale.x);
+                                statBars[1].transform.localScale = new Vector3(((float)currStatValue / (float)effectedUnits[i].GetMaxHealth() > 1 ? ((float)currStatValue - (float)effectedUnits[i].GetMaxHealth()) / (float)effectedUnits[i].GetMaxHealth() : 0),
+                                    statBars[1].transform.localScale.y, statBars[1].transform.localScale.x);
+                            }
+                            else if (j == 1)
+                                statBars[2].transform.localScale = new Vector3((currStatValue / effectedUnits[i].GetMaxEnergy()), statBars[2].transform.localScale.y, statBars[2].transform.localScale.x);
 
-            yield return new WaitForSeconds(CHARACTER_SWITCH_DELAY);
+                            statNums[j].text = currStatValue.ToString();
+                            yield return new WaitForSeconds(STAT_TICK_DELAY);
+                        }
+                    }
+                }
+
+                yield return new WaitForSeconds(CHARACTER_SWITCH_DELAY);
+            }
         }
         InitCharacterDisplay(castingUnit, castingUnit.GetStats(), castingUnit.GetDurations());
         mainCamera.transform.position = new Vector3(castingUnit.gameObject.transform.position.x, castingUnit.gameObject.transform.position.y, mainCamera.transform.position.z);

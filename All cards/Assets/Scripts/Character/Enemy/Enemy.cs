@@ -232,7 +232,7 @@ public class Enemy : CharacterStats
         CharacterStats target = targets[random.Next(0, targets.Count)];
 
         HashSet<Tile> targetedTiles = target.currTile.CollectTiles(ability.radius);
-        ability.UseAbility(targetedTiles, player, this, enemyControl.GetActionDisplay());
+        ability.UseAbility(targetedTiles, target.currTile, player, this, enemyControl.GetActionDisplay());
         yield return enemyControl.GetActionDisplay().StartAttackDisplay();
     }
     bool HasEnergy()

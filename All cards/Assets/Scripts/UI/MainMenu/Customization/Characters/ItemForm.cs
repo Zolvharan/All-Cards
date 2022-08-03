@@ -18,6 +18,7 @@ public class ItemForm : CreationForm
     public Toggle costly;
     public Toggle offensive;
     public Toggle biasedToggle;
+    public Toggle pushes;
     public Slider magnitude;
 
     public GameObject createComponents;
@@ -28,6 +29,7 @@ public class ItemForm : CreationForm
     public Text[] viewTexts;
     public GameObject[] statElements;
     public GameObject energyElements;
+    public GameObject pushElements;
     bool potencyView;
     bool effectView;
 
@@ -87,6 +89,18 @@ public class ItemForm : CreationForm
         }
         else
         {
+            // Clear all toggles
+            ranged.isOn = false;
+            precise.isOn = false;
+            AOE.isOn = false;
+            minus.isOn = false;
+            complex.isOn = false;
+            costly.isOn = false;
+            offensive.isOn = false;
+            biasedToggle.isOn = false;
+            pushes.isOn = false;
+            magnitude.value = 1;
+
             nameText.text = "Item";
             nameField.text = "";
             RandomizeItem();
@@ -272,10 +286,16 @@ public class ItemForm : CreationForm
                 costDurations[i] = Random.Range(1, AbilityForm.MAX_DURATION + 1);
             }
         }
-        // TODO: Set pushInts
-        for (int i = 0; i < pushInts.Length; i++)
+        // Set pushInts
+        if (pushes.isOn)
         {
-            pushInts[i] = 0;
+            pushInts[0] = Random.Range(0, AbilityForm.MAX_PUSH);
+            pushInts[1] = Random.Range(0, AbilityForm.MAX_PUSH);
+            if (costly.isOn)
+            {
+                pushInts[2] = Random.Range(0, AbilityForm.MAX_PUSH);
+                pushInts[3] = Random.Range(0, AbilityForm.MAX_PUSH);
+            }
         }
 
         SetViewNums();
@@ -376,9 +396,22 @@ public class ItemForm : CreationForm
 
         // Cannot edit energy in duration
         energyElements.SetActive(potencyView ? true : false);
+        // Cannot edit push in duration
+        pushElements.SetActive(potencyView);
 
         statTextNums[10].text = globalStats[0].ToString();
         statTextNums[11].text = globalStats[1].ToString();
         statTextNums[12].text = globalStats[2].ToString();
+
+        if (effectView)
+        {
+            statTextNums[13].text = pushInts[0].ToString();
+            statTextNums[14].text = pushInts[1].ToString();
+        }
+        else
+        {
+            statTextNums[13].text = pushInts[2].ToString();
+            statTextNums[14].text = pushInts[3].ToString();
+        }
     }
 }

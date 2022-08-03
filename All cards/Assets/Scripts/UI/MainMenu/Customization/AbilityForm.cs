@@ -44,10 +44,11 @@ public class AbilityForm : CreationForm
     int[] pushInts;
     public Text[] statTextNums;
     // order is: charForm order, health, energy, range, precision, radius
-    public static readonly int[] MIN_STAT_NUMS = { -10, -10, -10, -5, -10, -5, -5, -5, -10, -10, 0, 0, 0, -8, -8, -8, -8 };
-    public static readonly int[] MAX_STAT_NUMS = { 10, 10, 10, 5, 10, 5, 5, 5, 10, 10, 10, 10, 4, 8, 8, 8, 8 };
+    public static readonly int[] MIN_STAT_NUMS = { -10, -10, -10, -5, -10, -5, -5, -5, -10, -10, 0, 0, 0};
+    public static readonly int[] MAX_STAT_NUMS = { 10, 10, 10, 5, 10, 5, 5, 5, 10, 10, 10, 10, 4};
     public static readonly int[] MIN_DURATION_NUMS = { 1, 1, 1, 1, 1, 1, 1, 1, 0, 0 };
     public static int MAX_DURATION = 5;
+    public static int MAX_PUSH = 8;
 
     bool isInChar;
     bool editing;
@@ -127,6 +128,7 @@ public class AbilityForm : CreationForm
             currAbility.costPotencies.CopyTo(costPotencies, 0);
             currAbility.costDurations.CopyTo(costDurations, 0);
             currAbility.globalStats.CopyTo(globalStats, 0);
+            currAbility.pushInts.CopyTo(pushInts, 0);
             nameField.text = currAbility.abilityName;
 
             directedToggle.isOn = currAbility.directed;
@@ -323,11 +325,16 @@ public class AbilityForm : CreationForm
         if (statIndex >= 13)
         {
             // Adds 2 to index if it is cost
-            if (!potencyView)
-                statIndex += 2;
-
-            if (pushInts[statIndex - 13] < MAX_STAT_NUMS[statIndex])
-                statTextNums[statIndex].text = (++pushInts[statIndex - 13]).ToString();
+            if (!effectView)
+            {
+                if (pushInts[statIndex - 11] < MAX_PUSH)
+                    statTextNums[statIndex].text = (++pushInts[statIndex - 11]).ToString();
+            }
+            else
+            {
+                if (pushInts[statIndex - 13] < MAX_PUSH)
+                    statTextNums[statIndex].text = (++pushInts[statIndex - 13]).ToString();
+            }
         }
         // If precision, range, or radius, and less than max
         else if (statIndex >= 10 && globalStats[statIndex - 10] < MAX_STAT_NUMS[statIndex])
@@ -355,11 +362,16 @@ public class AbilityForm : CreationForm
         if (statIndex >= 13)
         {
             // Adds 2 to index if it is cost
-            if (!potencyView)
-                statIndex += 2;
-
-            if (pushInts[statIndex - 13] > MIN_STAT_NUMS[statIndex])
-                statTextNums[statIndex].text = (--pushInts[statIndex - 13]).ToString();
+            if (!effectView)
+            {
+                if (pushInts[statIndex - 11] > -MAX_PUSH)
+                    statTextNums[statIndex].text = (--pushInts[statIndex - 11]).ToString();
+            }
+            else
+            {
+                if (pushInts[statIndex - 11] > -MAX_PUSH)
+                    statTextNums[statIndex].text = (--pushInts[statIndex - 11]).ToString();
+            }
         }
         // If precision, range, or radius, and more than min
         else if (statIndex >= 10 && globalStats[statIndex - 10] > MIN_STAT_NUMS[statIndex])
@@ -472,5 +484,16 @@ public class AbilityForm : CreationForm
         statTextNums[10].text = globalStats[0].ToString();
         statTextNums[11].text = globalStats[1].ToString();
         statTextNums[12].text = globalStats[2].ToString();
+
+        if (effectView)
+        {
+            statTextNums[13].text = pushInts[0].ToString();
+            statTextNums[14].text = pushInts[1].ToString();
+        }
+        else
+        {
+            statTextNums[13].text = pushInts[2].ToString();
+            statTextNums[14].text = pushInts[3].ToString();
+        }
     }
 }

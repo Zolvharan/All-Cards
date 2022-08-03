@@ -23,6 +23,9 @@ public class Tile : MonoBehaviour
     public bool selected;
     public bool occupied = false;
 
+    // Custom properties
+    bool impassable;
+
     public LevelGenerator map;
 
     const int Z_OFFSET = -2;
@@ -72,6 +75,7 @@ public class Tile : MonoBehaviour
     public void ConstructTile(TileData newTileData, int initXPos, int initYPos)
     {
         tileData = newTileData;
+        impassable = newTileData.GetImpassable();
         image.sprite = CharacterImageForm.ConstructImage(tileData.GetImage());
         moveWeight = tileData.GetMoveWeight();
         xPos = initXPos;
@@ -96,6 +100,12 @@ public class Tile : MonoBehaviour
         currUnit = newUnit;
         currUnit.currTile = this;
         currUnit.transform.position = transform.position + new Vector3(0, 0, Z_OFFSET);
+    }
+    public void MoveUnit(CharacterStats newUnit)
+    {
+        newUnit.currTile.currUnit = null;
+        newUnit.currTile.occupied = false;
+        PlaceUnit(newUnit);
     }
 
     public void HighlightTiles(int targetingMode, int range = -1, bool walking = true)
@@ -220,5 +230,10 @@ public class Tile : MonoBehaviour
             distances.Enqueue(currRange - peekTile.moveWeight);
             currDistances[peekTile] = currRange - peekTile.moveWeight;
         }
+    }
+
+    public bool IsPassable()
+    {
+        return !occupied && !impassable;
     }
 }

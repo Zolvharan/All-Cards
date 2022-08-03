@@ -86,6 +86,11 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
+    public bool IsWithinBounds(int xPos, int yPos)
+    {
+        return xPos >= 0 && xPos < length && yPos >= 0 && yPos < height;
+    }
+
     void GenerateMapTileset(MapEditorData tileset)
     {
         length = tileset.GetLength();

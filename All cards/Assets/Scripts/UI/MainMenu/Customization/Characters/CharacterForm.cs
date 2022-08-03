@@ -47,6 +47,8 @@ public class CharacterForm : CreationForm
     void OnEnable()
     {
         RefreshAbilities();
+        alertText.text = "";
+        removingAbility = false;
     }
     public void OpenCreationForm(bool isEditing, Dropdown newDropdown)
     {

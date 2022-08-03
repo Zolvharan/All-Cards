@@ -32,9 +32,9 @@ public class Item : Ability
         numUses = newNumUses;
     }
 
-    public bool UseItem(HashSet<Tile> tiles, bool player, CharacterStats caster, ActionDisplay actionDisplay)
+    public bool UseItem(HashSet<Tile> tiles, Tile aimedPoint, bool player, CharacterStats caster, ActionDisplay actionDisplay)
     {
-        UseAbility(tiles, player, caster, actionDisplay);
+        UseAbility(tiles, aimedPoint, player, caster, actionDisplay);
         numUses--;
         if (numUses == 0)
             return true;

@@ -141,16 +141,16 @@ public class CharacterStats : MonoBehaviour
     {
         return isItems ? items[abilityIndex] : abilities[abilityIndex];
     }
-    public void UseAbility(int abilityIndex, HashSet<Tile> tiles, bool isItems, ActionDisplay actionDisplay)
+    public void UseAbility(int abilityIndex, HashSet<Tile> tiles, Tile aimedPoint, bool isItems, ActionDisplay actionDisplay)
     {
         if (!isItems)
         {
-            abilities[abilityIndex].UseAbility(tiles, player, this, actionDisplay);
+            abilities[abilityIndex].UseAbility(tiles, aimedPoint, player, this, actionDisplay);
         }
         else
         {
             // Use item and remove it if it is expended
-            if (items[abilityIndex].UseItem(tiles, player, this, actionDisplay))
+            if (items[abilityIndex].UseItem(tiles, aimedPoint, player, this, actionDisplay))
                 items.RemoveAt(abilityIndex);
         }
         attacked = true;

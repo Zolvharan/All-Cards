@@ -368,7 +368,7 @@ public class PlayerControl : MonoBehaviour
             confirming = false;
             OpenAbilityMenu(usingItems);
             currTile.SelectTile();
-            currTile.currUnit.UseAbility(abilityIndex, targetedTiles, usingItems, actionDisplay);
+            currTile.currUnit.UseAbility(abilityIndex, targetedTiles, targetedTile, usingItems, actionDisplay);
             // Activate display
             StartCoroutine(actionDisplay.StartAttackDisplay());
             currTile = null;
