@@ -24,12 +24,31 @@ public class BUIManager : MonoBehaviour
     public GameObject enemyHealth;
     public GameObject enemyEnergy;
 
+    CharacterStats currCharacter;
+    public GameObject statusDisplay;
+    public SpriteRenderer statusCharImage;
+    public GameObject statusHealth;
+    public GameObject statusEnergy;
+    public GameObject statusOvercharge;
+    public Text[] statusNums;
+    public Text[] statusTurnNums;
+
     public ForecastManager forecastDisplay;
 
     public GameObject win;
     public GameObject loss;
 
     public bool locked = false;
+
+    // Update is called once per frame
+    void Update()
+    {
+        // Close status whenever select button is pressed
+        if (Input.GetKeyDown(Inputs.select) && statusDisplay.activeSelf)
+        {
+            CloseStatus();
+        }
+    }
 
     public void ReturnToMenu()
     {
@@ -58,7 +77,7 @@ public class BUIManager : MonoBehaviour
         }
 
         SetStatBars(character, health, energy, overcharge);
-
+        currCharacter = character;
         characterDisplay.SetActive(true);
     }
 
@@ -107,6 +126,7 @@ public class BUIManager : MonoBehaviour
     public void DisplayEnemy(CharacterStats enemy)
     {
         enemyDisplay.SetActive(true);
+        currCharacter = enemy;
         bannerImage.sprite = enemy.GetComponent<Enemy>().GetBanner();
         enemyImage.sprite = enemy.portrait;
         float charHealth = enemy.GetHealth();
@@ -126,6 +146,24 @@ public class BUIManager : MonoBehaviour
     public void DisableEnemyDisplay()
     {
         enemyDisplay.SetActive(false);
+    }
+
+    public void DisplayStatus()
+    {
+        statusDisplay.SetActive(true);
+        statusCharImage.sprite = currCharacter.portrait;
+        SetStatBars(currCharacter, statusHealth, statusEnergy, statusOvercharge);
+        int[] currStats = currCharacter.GetStats();
+        int[] currTurns = currCharacter.GetDurations();
+        for (int i = 0; i < statusNums.Length; i++)
+        {
+            statusNums[i].text = currStats[i] < 0 ? "" : currStats[i].ToString();
+            statusTurnNums[i].text = currTurns[i] < 0 ? "" : currTurns[i].ToString();
+        }
+    }
+    public void CloseStatus()
+    {
+        statusDisplay.SetActive(false);
     }
 
     // Used at end and start of turn

@@ -37,6 +37,8 @@ public class Ability
     // Pushes units. First 2 ints are push x and push y, second 2 are cost (self) push x and push y
     public int[] pushInts;
 
+    const float PRECISION_MODIFIER = 0.1f;
+    const float DEXTERITY_MODIFIER = 0.1f;
     const float CRIT_MULTIPLIER = 1.5f;
 
     public Ability(string newName, bool isDirected, bool isBiased, bool isAlly, int[] newPotencies, int[] newDurations, int[] newCostPotencies, int[] newCostDurations, int[] newGlobals, int[] newPushInts, bool isPlayer)
@@ -113,8 +115,8 @@ public class Ability
                     continue;
                 // determine hit, factor dexterity into equation if effect is negative
                 randHitModifier = random.NextDouble();
-                posHit = 1 + (precision / 10) + randHitModifier;
-                negHit = (100 * Math.Pow(CharacterStats.DEX_MULTIPLIER, tile.currUnit.GetStats()[7]) + (precision * 10)) / 100 + randHitModifier;
+                posHit = CharacterStats.GetPositiveHit(precision, randHitModifier);
+                negHit = CharacterStats.GetNegativeHit(precision, tile.currUnit.GetStats()[7], randHitModifier);
 
                 string target;
                 // affect stat of each unit in possible AOE across duration
@@ -131,8 +133,6 @@ public class Ability
                         isCrits[isCrits.Count - 1][i] = false;
                         continue;
                     }
-                    // determine hit, factor dexterity into equation if effect is negative
-                    //hit = potencies[target] > 0 ? 1 + (precision / 10) + random.NextDouble() : (100 * Math.Pow(CharacterStats.DEX_MULTIPLIER, tile.currUnit.GetStats()[7]) + (precision * 10)) / 100 + random.NextDouble();
                     if ((potencies[target] > 0 && posHit >= 1) || (potencies[target] < 0 && negHit >= 1))
                     {
                         currHit = potencies[target] > 0 ? posHit : negHit;
@@ -222,9 +222,10 @@ public class Ability
             reCostDurations[i] = costDurations[CharacterStats.statTargets[i]];
         }
 
-        actionDisplay.SetAbilityDisplay(effectedUnits, preStats, preDurations, prePositions, effectivePotencies, reDurations, isCrits, caster, reCostPotencies, reCostDurations, abilityName);
+        actionDisplay.SetAbilityDisplay(effectedUnits, preStats, preDurations, prePositions, effectivePotencies, reDurations, isCrits, caster, reCostPotencies, reCostDurations, abilityName, precision);
     }
 
+    // Take current position, and force, and direction from source and end tiles
     Tile CalculateNewPosition(Tile startTile, Tile sourceTile, Tile endTile, int[] force)
     {
         int greaterForce = force[0] > force[1] ? force[0] : force[1];

@@ -50,6 +50,9 @@ public class ForecastManager : MonoBehaviour
             // Forcasted cost stats
             SetForeStatNums(foreCostStats, castingCharacter.GetOffsets(currAbility, true), castingCharacter.GetBaseStats(), castingCharacter.GetStats());
             SetForeDurationNums(foreCostDurations, castingCharacter.GetDurations(), currAbility.GetCostDurations());
+            // Set forecast chance nums
+            chanceNums[0].text = CharacterStats.GetNegativeHitChance(currAbility.precision, currUnit.GetStats()[7]).ToString() + "%";
+            chanceNums[1].text = CharacterStats.GetPositiveHitChance(currAbility.precision).ToString() + "%";
         }
     }
     // Used by attack
@@ -74,6 +77,9 @@ public class ForecastManager : MonoBehaviour
             SetForeStatNums(foreStats, strengthArray, currUnit.GetBaseStats(), currUnit.GetStats());
             SetForeDurationNums(currDurations, currUnit.GetDurations());
             SetForeDurationNums(foreDurations, currUnit.GetDurations());
+            // Set forecast chance nums
+            chanceNums[0].text = CharacterStats.GetNegativeHitChance(precision, currUnit.GetStats()[7]).ToString() + "%";
+            chanceNums[1].text = CharacterStats.GetPositiveHitChance(precision).ToString() + "%";
         }
     }
 
@@ -110,9 +116,6 @@ public class ForecastManager : MonoBehaviour
         {
             currTexts[i].text = numsToSet[i].ToString();
         }
-        // Set forecast chance nums
-        chanceNums[0].text = (System.Math.Round(100 * System.Math.Pow(CharacterStats.DEX_MULTIPLIER, numsToSet[7])) + (numsToSet[10] * 10)).ToString() + "%";
-        chanceNums[1].text = (100 + (numsToSet[10] * 10)).ToString() + "%";
     }
     public void SetForeDurationNums(Text[] currTexts, int[] currDurations, Dictionary<string, int> newDurations = null)
     {

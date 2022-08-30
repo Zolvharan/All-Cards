@@ -104,7 +104,7 @@ public class PlayerControl : MonoBehaviour
                         {
                             currUnit = rayHit.collider.GetComponent<Tile>().currUnit;
                             UI.ToggleCharDisplay(false, true, true);
-                            UI.DisplayForecast(rayHit.collider.GetComponent<Tile>().currUnit, currTile.currUnit.GetStats()[4], currTile.currUnit.GetStats()[5]);
+                            UI.DisplayForecast(rayHit.collider.GetComponent<Tile>().currUnit, currTile.currUnit.GetStats()[4], currTile.currUnit.GetStats()[6]);
                             confirming = true;
                         }
                     }

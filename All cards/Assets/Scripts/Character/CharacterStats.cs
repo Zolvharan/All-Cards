@@ -19,7 +19,8 @@ public class CharacterStats : MonoBehaviour
     public bool flying; // Allows character to travel with static tile move cost
 
     // Used to calculate accuracy
-    public const float DEX_MULTIPLIER = 0.8f;
+    public const float DEXTERITY_MULTIPLIER = 0.8f;
+    public const float PRECISION_MULTIPLIER = 10f;
 
     protected Dictionary<string, int> baseStats;
     protected Dictionary<string, int> currStats;
@@ -114,7 +115,7 @@ public class CharacterStats : MonoBehaviour
     {
         // Determine attack hit
         System.Random random = new System.Random();
-        double hit = (100 * Math.Pow(DEX_MULTIPLIER, unit.GetStats()[7]) + (currStats["precision"] * 10)) / 100 + random.NextDouble();
+        double hit = GetNegativeHit(currStats["precision"], unit.GetStats()[7], random.NextDouble());
 
         // Calculate damage
         int damage = currStats["strength"];
@@ -126,7 +127,7 @@ public class CharacterStats : MonoBehaviour
         else if (hit < 1)
             damage = -1;
 
-        actionDisplay.SetAttackDisplay(unit, unit.AdjustDamage(damage), hit >= 2);
+        actionDisplay.SetAttackDisplay(unit, unit.AdjustDamage(damage), hit >= 2, currStats["precision"]);
         unit.TakeDamage(damage);
 
         attacked = true;
@@ -300,6 +301,23 @@ public class CharacterStats : MonoBehaviour
         return potency;
     }
 
+    public static double GetPositiveHitChance(int precision)
+    {
+        return Math.Round(100 + (precision * PRECISION_MULTIPLIER));
+    }
+    public static double GetNegativeHitChance(int precision, int dexterity)
+    {
+        return Math.Round(100 * Math.Pow(DEXTERITY_MULTIPLIER, dexterity) + (precision * PRECISION_MULTIPLIER));
+    }
+    public static double GetPositiveHit(int precision, double randHitModifier)
+    {
+        return 1 + (precision * 0.01f * PRECISION_MULTIPLIER) + randHitModifier;
+    }
+    public static double GetNegativeHit(int precision, int dexterity, double randHitModifier)
+    {
+        return (100 * Math.Pow(DEXTERITY_MULTIPLIER, dexterity) + (precision * PRECISION_MULTIPLIER)) / 100 + randHitModifier;
+    }
+
     public bool HasMana(int abilityIndex)
     {
         return abilities[abilityIndex].costPotencies["energy"] <= currStats["energy"];
@@ -439,12 +457,12 @@ public class CharacterStats : MonoBehaviour
         int[] offsets = new int[statTargets.Length + 1];
 
         // Cost ignores defense
-        offsets[0] = costPotencies["health"] <= 0 ? offsets[0] = costPotencies["health"] : offsets[0] = GetHealing(costPotencies["health"]);
+        offsets[0] = costPotencies["health"] > 0 ? offsets[0] = -costPotencies["health"] : offsets[0] = GetHealing(-costPotencies["health"]);
 
         // Cost ignores resistance
         for (int i = 1; i < statTargets.Length; i++)
         {
-            offsets[i] = costPotencies[statTargets[i]];
+            offsets[i] = -costPotencies[statTargets[i]];
         }
 
         // Cost ignores precision

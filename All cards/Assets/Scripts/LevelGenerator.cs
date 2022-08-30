@@ -16,10 +16,6 @@ public class LevelGenerator : MonoBehaviour
 
     Transform tempTile;
     public Transform tilePrefab;
-    public Sprite tileImage;
-    public Sprite tileSelectedImage;
-    public Sprite attackingImage;
-    public Sprite abilityImage;
     public BUIManager UI;
 
     public List<CharacterStats> characters;

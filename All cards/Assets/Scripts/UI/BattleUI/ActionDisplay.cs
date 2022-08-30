@@ -15,6 +15,7 @@ public class ActionDisplay : MonoBehaviour
     public Text[] durationNums;
     public Text[] missTexts;
     public Image[] statBars;
+    public Text[] chanceNums;
 
     const float OPENING_DELAY = 1;
     const float MISS_DELAY = 0.5f;
@@ -41,11 +42,11 @@ public class ActionDisplay : MonoBehaviour
         yield return StartCoroutine(displayCoroutine);
     }
 
-    public void SetAttackDisplay(CharacterStats effectedUnit, int damage, bool isCrit)
+    public void SetAttackDisplay(CharacterStats effectedUnit, int damage, bool isCrit, int precision)
     {
         mainCamera.transform.position = new Vector3(effectedUnit.gameObject.transform.position.x, effectedUnit.gameObject.transform.position.y, mainCamera.transform.position.z);
         actionName.text = "Attack";
-        InitCharacterDisplay(effectedUnit, effectedUnit.GetStats(), effectedUnit.GetDurations());
+        InitCharacterDisplay(effectedUnit, effectedUnit.GetStats(), effectedUnit.GetDurations(), precision);
 
         displayCoroutine = DisplayAttack(damage, (float)effectedUnit.GetMaxHealth(), (float)effectedUnit.GetHealth(), isCrit);
     }
@@ -95,14 +96,14 @@ public class ActionDisplay : MonoBehaviour
     }
 
     public void SetAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<Vector3> prePositions,
-        List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
+        List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName, int precision)
     {
         actionName.text = abilityName;
 
-        displayCoroutine = DisplayAbility(effectedUnits, preStats, preDurations, prePositions, potencies, durations, isCrits, castingUnit, costPotencies, costDurations, abilityName);
+        displayCoroutine = DisplayAbility(effectedUnits, preStats, preDurations, prePositions, potencies, durations, isCrits, castingUnit, costPotencies, costDurations, abilityName, precision);
     }
     public IEnumerator DisplayAbility(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<Vector3> prePositions,
-        List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName)
+        List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName, int precision)
     {
         // Disable playerControl while display is going
         playerControl.enabled = false;
@@ -111,6 +112,7 @@ public class ActionDisplay : MonoBehaviour
         float currStatValue;
         int j;
         int k;
+        int endPoint;
 
         List<Vector3> postPositions = new List<Vector3>();
         // Cannot display attack that hits nothing
@@ -144,11 +146,11 @@ public class ActionDisplay : MonoBehaviour
                 }
             }
             mainDisplay.SetActive(true);
-            InitCharacterDisplay(effectedUnits[0], preStats[0], preDurations[0]);
+            InitCharacterDisplay(effectedUnits[0], preStats[0], preDurations[0], precision);
             yield return new WaitForSeconds(OPENING_DELAY);
             for (int i = 0; i < effectedUnits.Count; i++)
             {
-                InitCharacterDisplay(effectedUnits[i], preStats[i], preDurations[i]);
+                InitCharacterDisplay(effectedUnits[i], preStats[i], preDurations[i], precision);
                 mainCamera.transform.position = new Vector3(effectedUnits[i].gameObject.transform.position.x, effectedUnits[i].gameObject.transform.position.y, mainCamera.transform.position.z);
                 for (j = 0; j < potencies[i].Length; j++)
                 {
@@ -175,7 +177,8 @@ public class ActionDisplay : MonoBehaviour
                             missTexts[j].text = "Critical";
                         }
                         durationNums[j].text = durations[j] == 0 ? "" : durations[j].ToString();
-                        for (k = 0; k < System.Math.Abs(potencies[i][j]) && statNums[j].text != "0"; k++)
+                        endPoint = System.Math.Abs(potencies[i][j] + effectedUnits[i].GetBaseStats()[j] - preStats[i][j]);
+                        for (k = 0; k < endPoint && statNums[j].text != "0"; k++)
                         {
                             // Animate health bars and stat num
                             currStatValue += potencies[i][j] > 0 ? 1 : -1;
@@ -199,7 +202,7 @@ public class ActionDisplay : MonoBehaviour
                 yield return new WaitForSeconds(CHARACTER_SWITCH_DELAY);
             }
         }
-        InitCharacterDisplay(castingUnit, castingUnit.GetStats(), castingUnit.GetDurations());
+        InitCharacterDisplay(castingUnit, castingUnit.GetStats(), castingUnit.GetDurations(), precision);
         mainCamera.transform.position = new Vector3(castingUnit.gameObject.transform.position.x, castingUnit.gameObject.transform.position.y, mainCamera.transform.position.z);
         // Cost display
         for (j = 0; j < costPotencies.Length; j++)
@@ -232,7 +235,7 @@ public class ActionDisplay : MonoBehaviour
         ExitDisplay();
     }
 
-    void InitCharacterDisplay(CharacterStats effectedUnit, int[] stats, int[] durations)
+    void InitCharacterDisplay(CharacterStats effectedUnit, int[] stats, int[] durations, int precision)
     {
         characterSprite.sprite = effectedUnit.portrait;
 
@@ -246,6 +249,8 @@ public class ActionDisplay : MonoBehaviour
             // Duration is printed empty if 0 or below
             durationNums[i].text = durations[i] > 0 ? durations[i].ToString() : "";
         }
+        chanceNums[0].text = CharacterStats.GetNegativeHitChance(precision, stats[7]).ToString() + "%";
+        chanceNums[1].text = CharacterStats.GetPositiveHitChance(precision).ToString() + "%";
     }
 
     public void ExitDisplay()
