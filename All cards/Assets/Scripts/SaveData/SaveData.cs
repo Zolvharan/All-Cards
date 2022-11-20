@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
-// Manages character, ability, item, faction, and enemy unit data
+// Manages character, ability, item, faction, enemy unit, and tileset data
 public static class SaveData
 {
     static List<CharacterData> savedCharacters;

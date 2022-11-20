@@ -9,14 +9,19 @@ public class AbilityForm : CreationForm
 {
     GameObject frontPage;
     CharacterForm characterForm;
+    public TileEffectsForm tileEffectsForm;
     public SaveLoadForm saveLoadForm;
 
     public Toggle directedToggle;
     public Toggle biasedToggle;
     public Toggle allyToggle;
 
+    public GameObject tileSaveComponents;
+    public Text energyCostText;
+    // Components that are active when not in tile
+    public GameObject charSaveComponents;
     // Components that are only active when accessed from charform
-    public GameObject charComponents;
+    public GameObject charLoadComponents;
     // Strength, attack range, precision
     public Text[] baseStatTexts;
 
@@ -84,7 +89,9 @@ public class AbilityForm : CreationForm
         characterForm = newCharacterForm;
         currList = newList;
         isInChar = inChar;
-        charComponents.SetActive(isInChar);
+        tileSaveComponents.SetActive(false);
+        charSaveComponents.SetActive(true);
+        charLoadComponents.SetActive(isInChar);
 
         if (!isEditing)
             InitAbilityForm(false);
@@ -154,6 +161,37 @@ public class AbilityForm : CreationForm
         SetViewNums();
 
         SetEnergyCost();
+    }
+
+    // Tile form functions
+    public void OpenAbilityFormInTile(AbilityData currAbility)
+    {
+        tileSaveComponents.SetActive(true);
+        charSaveComponents.SetActive(false);
+        charLoadComponents.SetActive(false);
+
+        InitAbilityForm(true, currAbility);
+
+        baseStatTexts[0].text = "";
+        baseStatTexts[1].text = "";
+        baseStatTexts[2].text = "";
+
+        this.gameObject.SetActive(true);
+    }
+    public void ReturnToTileForm(bool saveChanges)
+    {
+        if (saveChanges)
+            tileEffectsForm.SetAbility(new AbilityData(nameField.text, directed, biased, ally, potencies, durations, costPotencies, costDurations, globalStats, pushInts));
+
+        tileEffectsForm.gameObject.SetActive(true);
+        this.gameObject.SetActive(false);
+    }
+    public void AdjustEnergyCost(bool isIncrement)
+    {
+        if (isIncrement && costPotencies[9] < MAX_STAT_NUMS[9])
+            energyCostText.text = (++costPotencies[9]).ToString();
+        else if (!isIncrement && costPotencies[9] > MIN_STAT_NUMS[9])
+            energyCostText.text = (--costPotencies[9]).ToString();
     }
 
     public void ExitAbilityForm(bool saveChanges)

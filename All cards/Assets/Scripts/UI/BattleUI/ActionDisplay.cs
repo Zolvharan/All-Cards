@@ -95,6 +95,11 @@ public class ActionDisplay : MonoBehaviour
         ExitDisplay();
     }
 
+    public void SetTurnDisplay()
+    {
+
+    }
+
     public void SetAbilityDisplay(List<CharacterStats> effectedUnits, List<int[]> preStats, List<int[]> preDurations, List<Vector3> prePositions,
         List<int[]> potencies, int[] durations, List<bool[]> isCrits, CharacterStats castingUnit, int[] costPotencies, int[] costDurations, string abilityName, int precision)
     {
@@ -207,10 +212,11 @@ public class ActionDisplay : MonoBehaviour
         // Cost display
         for (j = 0; j < costPotencies.Length; j++)
         {
-            currStatValue = castingUnit.GetStats()[j];
+            currStatValue = castingUnit.GetStats()[j] + costPotencies[j];
             // Hit
             if (costDurations[j] != 0)
                 durationNums[j].text = costDurations[j].ToString();
+            statNums[j].text = currStatValue.ToString();
             for (k = 0; k < System.Math.Abs(costPotencies[j]) && statNums[j].text != "0"; k++)
             {
                 // Animate health bars and stat num

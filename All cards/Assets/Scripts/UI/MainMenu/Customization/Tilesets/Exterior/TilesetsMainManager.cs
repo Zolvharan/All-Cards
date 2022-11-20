@@ -141,9 +141,9 @@ public class TilesetsMainManager : MonoBehaviour
         {
             tileFormManager.gameObject.SetActive(true);
             if (isEditing)
-                tileFormManager.InitForm(isEditing, this.gameObject, SaveData.GetTiles()[lists[2].value], lists[2].value);
+                tileFormManager.InitForm(isEditing, null, SaveData.GetTiles()[lists[2].value], lists[2].value);
             else
-                tileFormManager.InitForm(isEditing, this.gameObject);
+                tileFormManager.InitForm(isEditing, null);
             this.gameObject.SetActive(false);
         }
     }

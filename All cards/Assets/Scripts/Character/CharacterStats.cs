@@ -40,7 +40,7 @@ public class CharacterStats : MonoBehaviour
     const float OVERHEAL_FALLOFF = 0.5f;
 
     // Initializes variables
-    public void ConstructCharacter(string newName, Ability[] newAbilities, Sprite newPortrait, Sprite newBattleSprite, bool isFlying, Dictionary<String, int> newBaseStats, List<Item> newItems, bool isPlayer)
+    public void ConstructCharacter(string newName, Ability[] newAbilities, Sprite newPortrait, Sprite newBattleSprite, bool isFlying, Dictionary<string, int> newBaseStats, List<Item> newItems, bool isPlayer)
     {
         player = isPlayer;
 

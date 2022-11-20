@@ -9,6 +9,7 @@ public class TileFormManager : CreationForm
     public TilesetsMainManager tilesetsMainManager;
     public CharacterImageForm imageSelectionManager;
     public SaveTileManager saveTileManager;
+    public TileEffectsForm tileEffects;
 
     public TilesetFormManager tilesetFormManager;
     public LandformFormManager landformFormManager;
@@ -51,7 +52,7 @@ public class TileFormManager : CreationForm
         if (isEditing)
         {
             // load attributes
-            TileData currTile = tileToEdit;
+            currTile = tileToEdit;
             nameField.text = currTile.GetName();
             moveWeightSlider.value = currTile.GetMoveWeight() * DEFAULT_WEIGHT;
             moveWeightText.text = (moveWeightSlider.value / DEFAULT_WEIGHT).ToString();
@@ -69,6 +70,8 @@ public class TileFormManager : CreationForm
             tileData = GetPlaceholderImage();
             tileImage.sprite = CharacterImageForm.ConstructImage(tileData);
         }
+
+        tileEffects.InitForm(currTile);
     }
 
     // Save changes used by ??
@@ -85,7 +88,7 @@ public class TileFormManager : CreationForm
 
     public static TileData GetDefaultTile()
     {
-        return new TileData("Default", 1, false, GetPlaceholderImage());
+        return new TileData("Default", 1, false, GetPlaceholderImage(), new int[10], new int[8], null);
     }
     static byte[] GetPlaceholderImage()
     {
@@ -116,6 +119,12 @@ public class TileFormManager : CreationForm
     public void ChangedWeight()
     {
         moveWeightText.text = (moveWeightSlider.value / 10).ToString();
+    }
+
+    public void OpenTileEffects()
+    {
+        tileEffects.OpenTileEffects();
+        this.gameObject.SetActive(false);
     }
 
     // Save manager methods
@@ -158,7 +167,7 @@ public class TileFormManager : CreationForm
     }
     TileData ConstructTile()
     {
-        return new TileData(nameField.text, moveWeightSlider.value / 10, impassable.isOn, tileData);
+        return new TileData(nameField.text, moveWeightSlider.value / 10, impassable.isOn, tileData, tileEffects.GetRawEffects(), tileEffects.GetPercentageEffects(), tileEffects.GetAbility());
     }
     public TileData GetTile()
     {

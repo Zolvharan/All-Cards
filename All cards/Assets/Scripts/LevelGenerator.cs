@@ -16,7 +16,6 @@ public class LevelGenerator : MonoBehaviour
 
     Transform tempTile;
     public Transform tilePrefab;
-    public BUIManager UI;
 
     public List<CharacterStats> characters;
     public List<Enemy> enemies;
@@ -106,7 +105,7 @@ public class LevelGenerator : MonoBehaviour
             {
                 Debug.Log(i + " " + j);
                 tempTile = Instantiate(tilePrefab, new Vector3(i, j, 0), transform.rotation);
-                tempTile.GetComponent<Tile>().UI = UI;
+                tempTile.GetComponent<Tile>().UI = battleUI;
                 tiles[i][j] = tempTile.GetComponent<Tile>();
                 tiles[i][j].map = this;
                 tiles[i][j].ConstructTile(tileTypes[tileTypeIndexes[j + (i * tiles[0].Length)]], i, j);
@@ -129,7 +128,7 @@ public class LevelGenerator : MonoBehaviour
             for (j = 0; j < height; j++)
             {
                 tempTile = Instantiate(tilePrefab, new Vector3(i, j, 0), transform.rotation);
-                tempTile.GetComponent<Tile>().UI = UI;
+                tempTile.GetComponent<Tile>().UI = battleUI;
                 tiles[i][j] = tempTile.GetComponent<Tile>();
                 tiles[i][j].map = this;
             }

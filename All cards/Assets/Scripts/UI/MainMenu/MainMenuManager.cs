@@ -8,6 +8,7 @@ public class MainMenuManager : MonoBehaviour
     //public GameObject BattleUI;
 
     public GameObject frontPage;
+    public CampaignSelection campaignSelection;
     public BattleSetupUI customBattle;
     public CharactersFrontPage characters;
     public EnemyGenManager enemies;
@@ -20,6 +21,13 @@ public class MainMenuManager : MonoBehaviour
         characters.gameObject.SetActive(false);
         enemies.gameObject.SetActive(false);
         tilesets.SetActive(false);
+    }
+
+    public void OpenCampaignSelection()
+    {
+        campaignSelection.gameObject.SetActive(true);
+        campaignSelection.InitDisplay();
+        frontPage.SetActive(false);
     }
 
     public void OpenCustomBattle()
