@@ -57,19 +57,6 @@ public class UnitData
 
         basePrefab.ConstructUnit(unitName, newAbilities, newPortrait, newBattleSprite, flying, baseStats, newBanner, enemyLevel, isPlayer);
     }
-    /*// Construct sprite out of file data
-    static public Sprite ConstructImage(byte[] data)
-    {
-        Sprite newSprite;
-        Texture2D texture = new Texture2D(50, 50);
-        if (texture.LoadImage(data))
-        {
-            newSprite = Sprite.Create(texture, new Rect(0, 0, 50, 50), new Vector2(0.5f, 0.5f), 50);
-            return newSprite;
-        }
-        else
-            return null;
-    }*/
 
     public void SetBanner(byte[] newBanner)
     {

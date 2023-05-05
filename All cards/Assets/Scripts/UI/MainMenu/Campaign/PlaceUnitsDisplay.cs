@@ -27,14 +27,17 @@ public class PlaceUnitsDisplay : MonoBehaviour
     // Distance from view border
     const int MARGIN = 5;
 
+    public Transform tilePrefab;
+    Tile[][] tiles;
     Tile currTile;
     Enemy currEnemy;
     GameObject currTileEnemy;
+    ExteriorTilesetData currData;
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKey(Inputs.move) && selectedUnit != null)
+        if (Input.GetKeyDown(Inputs.move) && selectedUnit != null)
         {
             Vector3 mousePos = playerCam.ScreenToWorldPoint(Input.mousePosition);
             RaycastHit2D rayHit = Physics2D.Raycast(new Vector2(mousePos.x, mousePos.y), Vector2.zero);
@@ -76,12 +79,15 @@ public class PlaceUnitsDisplay : MonoBehaviour
 
     public void OpenDisplay(ExteriorTilesetData tilesetData, UnitData[] newEnemies)
     {
+        currData = tilesetData;
         generate.gameObject.SetActive(true);
+        tiles = LevelGenerator.GenerateExteriorTileset(tilesetData, tilePrefab, this.transform);
         FillTileBar(newEnemies);
     }
     public void OpenDisplay(MapEditorData tilesetData, UnitData[] newEnemies)
     {
         generate.gameObject.SetActive(false);
+        tiles = LevelGenerator.GenerateMapTileset(tilesetData, tilePrefab, this.transform);
         FillTileBar(newEnemies);
     }
 
@@ -130,11 +136,35 @@ public class PlaceUnitsDisplay : MonoBehaviour
             selectedLabel.text = enemies[characterButtons.IndexOf(button) - 2].GetName();
     }
 
+    public void GenerateNew()
+    {
+        foreach (Tile[] tilearray in tiles)
+        {
+            foreach (Tile tile in tilearray)
+            {
+                if (tile.currUnit != null)
+                    Destroy(tile.currUnit.gameObject);
+                Destroy(tile.gameObject);
+            }
+        }
+        tiles = LevelGenerator.GenerateExteriorTileset(currData, tilePrefab, this.transform);
+    }
+
     public void ReturnToBattleForm(bool saveChanges)
     {
         if (saveChanges)
         {
 
+        }
+
+        foreach (Tile[] tilearray in tiles)
+        {
+            foreach (Tile tile in tilearray)
+            {
+                if (tile.currUnit != null)
+                    Destroy(tile.currUnit.gameObject);
+                Destroy(tile.gameObject);
+            }
         }
 
         battleForm.gameObject.SetActive(true);

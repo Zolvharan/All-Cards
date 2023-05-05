@@ -20,18 +20,38 @@ public class LevelGenerator : MonoBehaviour
     public List<CharacterStats> characters;
     public List<Enemy> enemies;
 
-    System.Random random;
-    HashSet<Tile> currOccupiedTiles;
-    HashSet<Tile> currLandformTiles;
+    //System.Random random;
 
     public void GenerateMapLevel(List<CharacterStats> newCharacters, List<Enemy> newEnemies, MapEditorData tileset)
     {
-        GenerateMapTileset(tileset);
+        length = tileset.GetLength();
+        height = tileset.GetHeight();
+        tiles = GenerateMapTileset(tileset, tilePrefab, this.transform);
+        foreach (Tile[] tilearray in tiles)
+        {
+            foreach (Tile tile in tilearray)
+            {
+                tile.UI = battleUI;
+                tile.map = this;
+            }
+        }
+
         SetUnits(newCharacters, newEnemies);
     }
     public void GenerateExteriorLevel(List<CharacterStats> newCharacters, List<Enemy> newEnemies, ExteriorTilesetData tileset)
     {
-        GenerateExteriorTileset(tileset);
+        length = tileset.GetLength();
+        height = tileset.GetHeight();
+        tiles = GenerateExteriorTileset(tileset, tilePrefab, this.transform);
+        foreach (Tile[] tilearray in tiles)
+        {
+            foreach (Tile tile in tilearray)
+            {
+                tile.UI = battleUI;
+                tile.map = this;
+            }
+        }
+
         SetUnits(newCharacters, newEnemies);
     }
     void SetUnits(List<CharacterStats> newCharacters, List<Enemy> newEnemies)
@@ -39,19 +59,12 @@ public class LevelGenerator : MonoBehaviour
         characters = newCharacters;
         enemies = newEnemies;
 
-        // TODO: temp code, player should have some control over starting positions
         for (int i = 0; i < characters.Count; i++)
         {
             characters[i].playerControl = playerControl;
-            //tiles[0][i].PlaceUnit(characters[i]);
         }
         playerControl.units = characters;
 
-        // TODO: temp code, enemies should probably have more specific starting positions
-        for (int i = 0; i < enemies.Count; i++)
-        {
-            //tiles[tiles.Length - 1][tiles[i].Length - i - 1].PlaceUnit(enemies[i]);
-        }
         enemyControl.SetEnemies(enemies);
 
         unitPlacement.PlaceUnits(newCharacters, newEnemies);
@@ -86,55 +99,53 @@ public class LevelGenerator : MonoBehaviour
         return xPos >= 0 && xPos < length && yPos >= 0 && yPos < height;
     }
 
-    void GenerateMapTileset(MapEditorData tileset)
+    static public Tile[][] GenerateMapTileset(MapEditorData tileset, Transform tilePrefab, Transform origin)
     {
-        length = tileset.GetLength();
-        height = tileset.GetHeight();
-        tiles = new Tile[length][];
+        int length = tileset.GetLength();
+        int height = tileset.GetHeight();
+        Tile[][] tiles = new Tile[length][];
 
         int[] tileTypeIndexes = tileset.GetTypeIndexes();
         TileData[] tileTypes = tileset.GetTileTypes();
 
         int i;
         int j;
-        Debug.Log(height);
+        Transform tempTile;
         for (i = 0; i < length; i++)
         {
             tiles[i] = new Tile[height];
             for (j = 0; j < height; j++)
             {
-                Debug.Log(i + " " + j);
-                tempTile = Instantiate(tilePrefab, new Vector3(i, j, 0), transform.rotation);
-                tempTile.GetComponent<Tile>().UI = battleUI;
+                tempTile = Instantiate(tilePrefab, new Vector3(i, j, 0), origin.rotation);
                 tiles[i][j] = tempTile.GetComponent<Tile>();
-                tiles[i][j].map = this;
                 tiles[i][j].ConstructTile(tileTypes[tileTypeIndexes[j + (i * tiles[0].Length)]], i, j);
             }
         }
+
+        return tiles;
     }
 
-    void GenerateExteriorTileset(ExteriorTilesetData tileset)
+    static public Tile[][] GenerateExteriorTileset(ExteriorTilesetData tileset, Transform tilePrefab, Transform origin)
     {
-        length = tileset.GetLength();
-        height = tileset.GetHeight();
-        tiles = new Tile[length][];
+        int length = tileset.GetLength();
+        int height = tileset.GetHeight();
+        Tile[][] tiles = new Tile[length][];
 
         // Init tiles
         int i;
         int j;
+        Transform tempTile;
         for (i = 0; i < length; i++)
         {
             tiles[i] = new Tile[height];
             for (j = 0; j < height; j++)
             {
-                tempTile = Instantiate(tilePrefab, new Vector3(i, j, 0), transform.rotation);
-                tempTile.GetComponent<Tile>().UI = battleUI;
+                tempTile = Instantiate(tilePrefab, new Vector3(i, j, 0), origin.rotation);
                 tiles[i][j] = tempTile.GetComponent<Tile>();
-                tiles[i][j].map = this;
             }
         }
-        currOccupiedTiles = new HashSet<Tile>();
-        random = new System.Random();
+        HashSet<Tile> currOccupiedTiles = new HashSet<Tile>();
+        System.Random random = new System.Random();
 
         // Generate landforms
         int xStart;
@@ -149,6 +160,7 @@ public class LevelGenerator : MonoBehaviour
         int randIterations;
         int subRandIterations;
         SubLandformData currSubLandform;
+        HashSet<Tile> currLandformTiles;
         foreach (LandformData landform in tileset.GetLandforms())
         {
             randIterations = random.Next(landform.GetMinCount(), landform.GetMaxCount() + 1);
@@ -190,7 +202,7 @@ public class LevelGenerator : MonoBehaviour
                 availableTiles.ExceptWith(currOccupiedTiles);
                 foreach (Tile tile in currLandformTiles)
                 {
-                    Snek(tile, (preXLen - xLen + preYLen - xLen) / 2, preXLen - xLen, preYLen - xLen, landform.GetSnakiness(), landform.GetTile());
+                    Snek(tile, (preXLen - xLen + preYLen - xLen) / 2, preXLen - xLen, preYLen - xLen, landform.GetSnakiness(), landform.GetTile(), length, height, tiles);
                 }
                 currLandformTiles.UnionWith(newLandformTiles);
 
@@ -234,7 +246,7 @@ public class LevelGenerator : MonoBehaviour
                     newLandformTiles.Clear();
                     foreach (Tile tile in currLandformTiles)
                     {
-                        Snek(tile, (preSubXLen - xLen + preSubYLen - xLen) / 2, preSubXLen - xLen, preSubYLen - xLen, currSubLandform.GetSnakiness(), currSubLandform.GetTile());
+                        Snek(tile, (preSubXLen - xLen + preSubYLen - xLen) / 2, preSubXLen - xLen, preSubYLen - xLen, currSubLandform.GetSnakiness(), currSubLandform.GetTile(), length, height, tiles);
                     }
                     currLandformTiles.UnionWith(newLandformTiles);
                 }
@@ -277,14 +289,17 @@ public class LevelGenerator : MonoBehaviour
                 }
             }
         }
+
+        return tiles;
     }
-    Dictionary<Tile, int> currDistances;
-    HashSet<Tile> newLandformTiles;
+    static Dictionary<Tile, int> currDistances;
+    static HashSet<Tile> newLandformTiles;
     // For sublandform snakiness
-    HashSet<Tile> availableTiles;
+    static HashSet<Tile> availableTiles;
     // Take given tiles and snake them out
-    public void Snek(Tile currTile, int maxLen, int currXLen, int currYLen, float currSnakiness, TileData tileData)
+    static void Snek(Tile currTile, int maxLen, int currXLen, int currYLen, float currSnakiness, TileData tileData, int length, int height, Tile[][] tiles)
     {
+        System.Random random = new System.Random();
         Tile nextTile;
         // If adjacent tile is on screen, expand to tile based on random probability of snakiness and if size is not reached
         if (maxLen > 0)
@@ -299,7 +314,7 @@ public class LevelGenerator : MonoBehaviour
                         nextTile.ConstructTile(tileData, currTile.xPos - 1, currTile.yPos);
                         newLandformTiles.Add(nextTile);
                         currDistances[nextTile] = maxLen - 1;
-                        Snek(nextTile, maxLen - 1, currXLen - 1, currYLen, currSnakiness, tileData);
+                        Snek(nextTile, maxLen - 1, currXLen - 1, currYLen, currSnakiness, tileData, length, height, tiles);
                     }
                 }
                 if (random.NextDouble() <= (double)currSnakiness && currTile.xPos + 1 >= 0 && currTile.xPos + 1 < length && currTile.yPos >= 0 && currTile.yPos < height)
@@ -310,7 +325,7 @@ public class LevelGenerator : MonoBehaviour
                         nextTile.ConstructTile(tileData, currTile.xPos + 1, currTile.yPos);
                         newLandformTiles.Add(nextTile);
                         currDistances[nextTile] = maxLen - 1;
-                        Snek(nextTile, maxLen - 1, currXLen - 1, currYLen, currSnakiness, tileData);
+                        Snek(nextTile, maxLen - 1, currXLen - 1, currYLen, currSnakiness, tileData, length, height, tiles);
                     }
                 }
             }
@@ -324,7 +339,7 @@ public class LevelGenerator : MonoBehaviour
                         nextTile.ConstructTile(tileData, currTile.xPos, currTile.yPos - 1);
                         newLandformTiles.Add(nextTile);
                         currDistances[nextTile] = maxLen - 1;
-                        Snek(nextTile, maxLen - 1, currXLen, currYLen - 1, currSnakiness, tileData);
+                        Snek(nextTile, maxLen - 1, currXLen, currYLen - 1, currSnakiness, tileData, length, height, tiles);
                     }
                 }
                 if (random.NextDouble() <= (double)currSnakiness && currTile.xPos >= 0 && currTile.xPos < length && currTile.yPos + 1 >= 0 && currTile.yPos + 1 < height)
@@ -335,7 +350,7 @@ public class LevelGenerator : MonoBehaviour
                         nextTile.ConstructTile(tileData, currTile.xPos, currTile.yPos + 1);
                         newLandformTiles.Add(nextTile);
                         currDistances[nextTile] = maxLen - 1;
-                        Snek(nextTile, maxLen - 1, currXLen, currYLen - 1, currSnakiness, tileData);
+                        Snek(nextTile, maxLen - 1, currXLen, currYLen - 1, currSnakiness, tileData, length, height, tiles);
                     }
                 }
             }
